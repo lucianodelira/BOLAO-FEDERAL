@@ -2,92 +2,60 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<title>Sala do Bolão - Loteria Federal</title>
+<title>Bolão Loteria Federal</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
 body {
-  margin: 0;
-  font-family: 'Segoe UI', Arial, sans-serif;
-  background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+  font-family: Arial, sans-serif;
+  background: #0d0d0d;
   color: #fff;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding-top: 20px;
+  min-height: 100vh;
 }
 
-.hidden { display: none; }
-
 .container {
-  max-width: 380px;
-  margin: 40px auto;
-  background: #111;
-  padding: 22px;
-  border-radius: 14px;
+  background: #1c1c1c;
+  padding: 20px;
+  border-radius: 10px;
+  width: 100%;
+  max-width: 400px;
 }
 
 h2, h3 {
   text-align: center;
-  margin-top: 0;
 }
 
 input, button {
   width: 100%;
   padding: 12px;
   margin-top: 10px;
-  border-radius: 8px;
+  border-radius: 5px;
   border: none;
-  font-size: 15px;
-}
-
-input {
-  background: #1e1e1e;
-  color: #fff;
 }
 
 button {
-  background: #00e676;
+  background: #00c853;
   color: #000;
   font-weight: bold;
   cursor: pointer;
 }
 
-.status {
-  margin-top: 10px;
-  text-align: center;
+button:disabled {
+  background: #555;
 }
 
-.qr img {
+#qr img {
   width: 220px;
   margin-top: 10px;
 }
 
-.pixkey {
-  background: #1c1c1c;
-  padding: 8px;
-  border-radius: 6px;
-  margin-top: 6px;
-  word-break: break-all;
-  font-size: 13px;
-}
-
-/* SALA */
-.sala {
-  max-width: 800px;
-  margin: auto;
-  padding: 20px;
-}
-
-.card {
-  background: #121212;
-  border-radius: 12px;
-  padding: 16px;
-  margin-bottom: 15px;
-}
-
 ul {
-  padding-left: 18px;
-}
-
-
-ul {
+  list-style: none;
+  padding: 0;
   margin-top: 10px;
 }
 
@@ -99,54 +67,50 @@ ul li {
   font-size: 14px;
 }
 
+.hidden {
+  display: none;
+}
 
-
-  
+/* Painel admin */
+#adminPanel {
+  display: none;
+  margin-top: 20px;
+  background: #2a2a2a;
+  padding: 15px;
+  border-radius: 8px;
+}
 </style>
 </head>
-
 <body>
 
-<!-- LOGIN / PIX -->
-<div class="container" id="loginArea">
-  <h2>🎟️ Bolão Loteria Federal</h2>
-
-  <input id="nome" placeholder="Seu nome completo">
+<div class="container" id="loginContainer">
+  <h2>Bolão Loteria Federal</h2>
+  <input id="nome" placeholder="Seu nome">
   <input id="telefone" placeholder="Telefone / WhatsApp">
-
   <button onclick="gerarPix()">GERAR PIX</button>
-
-  <div class="status" id="status"></div>
-  <div class="qr" id="qr"></div>
+  <div id="status"></div>
+  <div id="qr"></div>
 </div>
 
-<!-- SALA -->
-<div class="sala hidden" id="salaBolao">
+<div class="container hidden" id="salaContainer">
+  <h2>👤 Bem-vindo, <span id="userNome"></span></h2>
+  <p>Telefone: <span id="userTelefone"></span></p>
 
-  <h2>🎉 Sala do Bolão</h2>
-
-  <div class="card">
-    <h3>👤 Seus dados</h3>
-    <p><strong>Nome:</strong> <span id="meuNome"></span></p>
-    <p><strong>Telefone:</strong> <span id="meuTelefone"></span></p>
+  <div>
+    <button onclick="toggleParticipantes()">👥 Ver participantes ativos</button>
+    <ul id="listaParticipantes" class="hidden"></ul>
   </div>
 
-  <div class="card">
-  <h3>👥 Participantes do Bolão</h3>
-
-  <button onclick="toggleParticipantes()" style="margin-bottom:10px">
-    Ver participantes
-  </button>
-
-  <ul id="listaParticipantes" class="hidden"></ul>
-</div>
-
-
-  <div class="card">
+  <div>
     <h3>🎯 Palpites</h3>
-    <p>(os palpites serão exibidos aqui)</p>
+    <div id="palpitesArea">(área pronta para seus palpites)</div>
   </div>
 
+  <div id="adminPanel">
+    <h3>🛠️ Painel Admin</h3>
+    <button onclick="carregarParticipantesAdmin()">Atualizar lista completa</button>
+    <ul id="adminLista"></ul>
+  </div>
 </div>
 
 <script>
@@ -154,107 +118,84 @@ const API_URL = 'https://script.google.com/macros/s/AKfycbyyFITAR_NOlCc1zNuML7om
 
 let paymentId = null;
 let timer = null;
-let nomeCliente = '';
-let telefoneCliente = '';
 
-/* ================= AUTO LOGIN ================= */
-const auth = JSON.parse(localStorage.getItem('bolao_auth'));
-if (auth && auth.expires > Date.now()) {
-  entrarNaSala(auth.nome, auth.telefone);
-}
+// Carrega login persistente
+window.addEventListener('DOMContentLoaded', () => {
+  const storedUser = JSON.parse(localStorage.getItem('bolaoUser'));
+  if (storedUser) {
+    abrirSala(storedUser.nome, storedUser.telefone);
+  }
+});
 
-/* ================= PIX ================= */
+// Gerar PIX
 function gerarPix() {
-  nomeCliente = nome.value.trim();
-  telefoneCliente = telefone.value.trim();
+  const nome = document.getElementById('nome').value.trim();
+  const telefone = document.getElementById('telefone').value.trim();
 
-  if (!nomeCliente || !telefoneCliente) {
-    status.innerText = 'Preencha todos os dados';
+  if (!nome || !telefone) {
+    alert('Preencha nome e telefone');
     return;
   }
 
-  status.innerText = 'Gerando PIX...';
+  document.getElementById('status').innerText = 'Gerando PIX...';
 
   fetch(API_URL, {
     method: 'POST',
-    body: JSON.stringify({
-      action: 'createPayment',
-      nome: nomeCliente,
-      telefone: telefoneCliente
-    })
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'createPayment', nome, telefone })
   })
   .then(r => r.json())
   .then(data => {
     if (!data.success) {
-      status.innerText = data.message;
+      document.getElementById('status').innerText = data.message;
       return;
     }
 
     paymentId = data.paymentId;
-
-    qr.innerHTML = `
+    document.getElementById('qr').innerHTML = `
       <img src="data:image/png;base64,${data.qrCodeBase64}">
-      <div class="pixkey">${data.pixKey}</div>
+      <p>${data.pixKey}</p>
     `;
 
-    status.innerText = '⏳ Aguardando pagamento...';
-    timer = setInterval(verificarPagamento, 5000);
+    document.getElementById('status').innerText = 'Aguardando pagamento...';
+    timer = setInterval(() => verificarPagamento(nome, telefone), 5000);
+  })
+  .catch(err => {
+    console.error(err);
+    document.getElementById('status').innerText = 'Erro de conexão com o servidor';
   });
 }
 
-function verificarPagamento() {
+// Verificar status do PIX
+function verificarPagamento(nome, telefone) {
   fetch(API_URL, {
     method: 'POST',
-    body: JSON.stringify({
-      action: 'checkPayment',
-      paymentId
-    })
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'checkPayment', paymentId })
   })
   .then(r => r.json())
-  .then(data => {
-    if (data.status === 'PAID') {
+  .then(d => {
+    if (d.status === 'PAID') {
       clearInterval(timer);
-
-      localStorage.setItem('bolao_auth', JSON.stringify({
-        nome: nomeCliente,
-        telefone: telefoneCliente,
-        expires: Date.now() + (24 * 60 * 60 * 1000) // 24 horas
-      }));
-
-      entrarNaSala(nomeCliente, telefoneCliente);
+      document.getElementById('status').innerText = '✅ Pagamento aprovado!';
+      // Salva login no localStorage
+      localStorage.setItem('bolaoUser', JSON.stringify({ nome, telefone }));
+      abrirSala(nome, telefone);
     }
   });
 }
 
-/* ================= SALA ================= */
-function entrarNaSala(nome, telefone) {
-  loginArea.classList.add('hidden');
-  salaBolao.classList.remove('hidden');
-
-  meuNome.innerText = nome;
-  meuTelefone.innerText = telefone;
-
-  carregarParticipantes();
+// Abrir sala do bolão
+function abrirSala(nome, telefone) {
+  document.getElementById('loginContainer').classList.add('hidden');
+  document.getElementById('salaContainer').classList.remove('hidden');
+  document.getElementById('userNome').innerText = nome;
+  document.getElementById('userTelefone').innerText = telefone;
 }
 
-function carregarParticipantes() {
-  fetch(API_URL + '?action=infoBolao')
-    .then(r => r.json())
-    .then(data => {
-      listaParticipantes.innerHTML = '';
-      data.participantes.forEach(p => {
-        const li = document.createElement('li');
-        li.textContent = p.nome;
-        listaParticipantes.appendChild(li);
-      });
-    });
-}
-
-
-
+// Lista participantes
 function toggleParticipantes() {
   const ul = document.getElementById('listaParticipantes');
-
   if (ul.classList.contains('hidden')) {
     ul.classList.remove('hidden');
     carregarParticipantes();
@@ -269,22 +210,36 @@ function carregarParticipantes() {
     .then(data => {
       const ul = document.getElementById('listaParticipantes');
       ul.innerHTML = '';
-
       if (!data.participantes || data.participantes.length === 0) {
-        ul.innerHTML = '<li>Nenhum participante confirmado ainda</li>';
+        ul.innerHTML = '<li>Nenhum participante ativo</li>';
         return;
       }
-
       data.participantes.forEach(p => {
         const li = document.createElement('li');
-        li.textContent = p.nome;
+        li.textContent = `${p.nome} - ${p.telefone}`;
         ul.appendChild(li);
       });
     });
 }
 
-
-  
+// Painel admin
+function carregarParticipantesAdmin() {
+  fetch(API_URL + '?action=infoBolao')
+    .then(r => r.json())
+    .then(data => {
+      const ul = document.getElementById('adminLista');
+      ul.innerHTML = '';
+      if (!data.participantes || data.participantes.length === 0) {
+        ul.innerHTML = '<li>Nenhum participante</li>';
+        return;
+      }
+      data.participantes.forEach(p => {
+        const li = document.createElement('li');
+        li.textContent = `${p.nome} - ${p.telefone}`;
+        ul.appendChild(li);
+      });
+    });
+}
 </script>
 
 </body>
