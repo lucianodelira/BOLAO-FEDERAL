@@ -154,120 +154,69 @@ ul li {
 <script>
 const API_URL = 'https://script.google.com/macros/s/AKfycbyyFITAR_NOlCc1zNuML7omJrSZje84pWC9e5zu0-5DNxnmoVcSkHyYzHJujcfC_VzZ/exec';
 
-let paymentId = null;
-let timer = null;
 let nomeCliente = '';
 let telefoneCliente = '';
+let idCliente = '';
 
-/* ================= AUTO LOGIN ================= */
-const auth = JSON.parse(localStorage.getItem('bolao_auth'));
-if (auth && auth.expires > Date.now()) {
-  entrarNaSala(auth.nome, auth.telefone);
+// AUTO LOGIN
+if(localStorage.getItem('bolao_nome') && localStorage.getItem('bolao_telefone')){
+  nomeCliente = localStorage.getItem('bolao_nome');
+  telefoneCliente = localStorage.getItem('bolao_telefone');
+  abrirSala();
 }
 
-/* ================= PIX ================= */
-function gerarPix() {
-  nomeCliente = nome.value.trim();
-  telefoneCliente = telefone.value.trim();
-
-  if (!nomeCliente || !telefoneCliente) {
-    status.innerText = 'Preencha todos os dados';
-    return;
-  }
-
-  status.innerText = 'Gerando PIX...';
-
-  fetch(API_URL, {
-    method: 'POST',
-    body: JSON.stringify({
-      action: 'createPayment',
-      nome: nomeCliente,
-      telefone: telefoneCliente
-    })
-  })
-  .then(r => r.json())
-  .then(data => {
-    if (!data.success) {
-      status.innerText = data.message;
-      return;
-    }
-
-    paymentId = data.paymentId;
-
-    qr.innerHTML = `
-      <img src="data:image/png;base64,${data.qrCodeBase64}">
-      <div class="pixkey">${data.pixKey}</div>
-    `;
-
-    status.innerText = '⏳ Aguardando pagamento...';
-    timer = setInterval(verificarPagamento, 5000);
-  });
-}
-
-function verificarPagamento() {
-  fetch(API_URL, {
-    method: 'POST',
-    body: JSON.stringify({
-      action: 'checkPayment',
-      paymentId
-    })
-  })
-  .then(r => r.json())
-  .then(data => {
-    if (data.status === 'PAID') {
-      clearInterval(timer);
-
-      localStorage.setItem('bolao_auth', JSON.stringify({
-        nome: nomeCliente,
-        telefone: telefoneCliente,
-        expires: Date.now() + (24 * 60 * 60 * 1000) // 24 horas
-      }));
-
-      entrarNaSala(nomeCliente, telefoneCliente);
-    }
-  });
-}
-
-/* ================= SALA ================= */
-function entrarNaSala(nome, telefone) {
-  loginArea.classList.add('hidden');
-  salaBolao.classList.remove('hidden');
-
-  meuNome.innerText = nome;
-  meuTelefone.innerText = telefone;
-
+// Abre sala do bolão
+function abrirSala(){
+  document.getElementById('loginArea').classList.add('hidden');
+  document.getElementById('salaBolao').classList.remove('hidden');
+  document.getElementById('meuNome').innerText = nomeCliente;
+  document.getElementById('meuTelefone').innerText = telefoneCliente;
   carregarParticipantes();
 }
 
-function carregarParticipantes() {
-  fetch(API_URL + '?action=infoBolao')
-    .then(r => r.json())
-    .then(data => {
-      listaParticipantes.innerHTML = '';
-      data.participantes.forEach(p => {
-        const li = document.createElement('li');
-        li.textContent = p.nome;
-        listaParticipantes.appendChild(li);
+// Login e validação
+function entrarNaSala(nome, telefone){
+  nomeCliente = nome;
+  telefoneCliente = telefone;
+  localStorage.setItem('bolao_nome', nome);
+  localStorage.setItem('bolao_telefone', telefone);
+  abrirSala();
+}
+
+// Carrega participantes ativos
+function carregarParticipantes(){
+  fetch(`${API_URL}?action=infoBolao`)
+    .then(r=>r.json())
+    .then(data=>{
+      const ul=document.getElementById('listaParticipantes');
+      ul.innerHTML='';
+      if(!data.participantes || data.participantes.length===0){
+        ul.innerHTML='<li>Nenhum participante confirmado ainda</li>'; return;
+      }
+      data.participantes.forEach(p=>{
+        const li=document.createElement('li'); li.textContent=p.nome; ul.appendChild(li);
       });
     });
 }
 
-
-
 function toggleParticipantes(){
-  const ul=document.getElementById('listaParticipantes');
-  ul.classList.toggle('hidden');
+  document.getElementById('listaParticipantes').classList.toggle('hidden');
 }
 
+// Gera a pule com todos os números do participante logado
 function gerarPule(){
   const div=document.getElementById('puleContainer');
-  div.classList.remove('hidden'); div.innerHTML='Carregando...';
+  div.classList.remove('hidden');
+  div.innerHTML='Carregando...';
+
   fetch(`${API_URL}?action=getPule&nome=${encodeURIComponent(nomeCliente)}&telefone=${encodeURIComponent(telefoneCliente)}`)
   .then(r=>r.json())
   .then(data=>{
     div.innerHTML='';
     if(!data.success){div.innerHTML=`<p>${data.message}</p>`; return;}
+
     const { participante, numeros } = data;
+    idCliente = participante.id;
 
     // Cartão do participante
     const card=document.createElement('div');
@@ -279,39 +228,25 @@ function gerarPule(){
     // Números
     numeros.forEach(n=>{
       const cell=document.createElement('div');
-      cell.style.background='#1e1e1e'; cell.style.padding='6px'; cell.style.borderRadius='4px'; cell.style.fontSize='14px';
-      cell.textContent = n;
-      div.appendChild(cell);
+      cell.style.background='#1e1e1e'; cell.style.padding='6px';
+      cell.style.borderRadius='4px'; cell.style.fontSize='14px';
+      cell.textContent = n; div.appendChild(cell);
     });
   });
 }
 
+// Compartilha pelo WhatsApp
 function compartilharPule(){
+  const numeros = Array.from(document.querySelectorAll('#puleContainer > div:not(:first-child)')).map(d=>d.textContent);
   fetch(API_URL,{
     method:'POST',
-    body:JSON.stringify({
-      action:'compartilharPule',
-      nome:nomeCliente,
-      telefone:telefoneCliente,
-      id:0, // opcional, pode ser 0 se não armazenou localmente
-      numeros:Array.from(document.querySelectorAll('#puleContainer > div:not(:first-child)')).map(d=>d.textContent)
-    })
+    body:JSON.stringify({action:'compartilharPule',id:idCliente,numeros})
   }).then(r=>r.json())
     .then(data=>{
       if(data.success){
-        const texto=`Minha pule:\nNome: ${nomeCliente}\nTelefone: ${telefoneCliente}\nNúmeros: ${Array.from(document.querySelectorAll('#puleContainer > div:not(:first-child)')).map(d=>d.textContent).join(', ')}`;
+        const texto=`Minha pule:\nNome: ${nomeCliente}\nTelefone: ${telefoneCliente}\nNúmeros: ${numeros.join(', ')}`;
         window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(texto)}`,'_blank');
-      } else { alert('Erro ao compartilhar: '+data.message); }
+      }else{alert('Erro: '+data.message);}
     });
 }
-
-// Auto login
-if(localStorage.getItem('bolao_nome') && localStorage.getItem('bolao_telefone')){
-  nomeCliente=localStorage.getItem('bolao_nome');
-  telefoneCliente=localStorage.getItem('bolao_telefone');
-  abrirSala();
-}
 </script>
-
-</body>
-</html>
