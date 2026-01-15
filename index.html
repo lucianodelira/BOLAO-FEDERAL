@@ -119,12 +119,14 @@ function verificarPagamento() {
   })
   .then(r => r.json())
   .then(data => {
-    if (data.status === 'PAID') {
-      clearInterval(timer);
-      document.getElementById('status').innerText = '✅ Pagamento aprovado!';
-    }
-  });
-}
+ if (d.status === 'PAID') {
+    clearInterval(t);
+
+    pixStatus.innerText = '✅ Pagamento aprovado!';
+    
+    loadBolao(); // <<< AQUI É O PONTO CERTO
+  }
+});
 </script>
 
 
