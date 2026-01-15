@@ -165,66 +165,73 @@ function toggleParticipantes(){
 function gerarPule() {
   const div = document.getElementById('puleContainer');
   div.classList.remove('hidden');
-  div.innerHTML = 'Carregando...';
+  div.innerHTML = 'Gerando pule...';
 
-  // Chama a API getPule usando nome + telefone
-  fetch(`${API_URL}?action=getPule&nome=${encodeURIComponent(nomeCliente)}&telefone=${encodeURIComponent(telefoneCliente)}`)
+  fetch(`${API_URL}?action=getPule`)
     .then(r => r.json())
     .then(data => {
       div.innerHTML = '';
-      if (!data.success) { 
-        div.innerHTML = `<p>${data.message}</p>`; 
-        return; 
+      if (!data.success) {
+        div.innerHTML = `<p>${data.message}</p>`;
+        return;
       }
 
-      const { participante, numeros } = data;
+      const { numeros, codigo } = data;
 
-      // Cartão do participante logado
+      // Cartão da pule
       const card = document.createElement('div');
       card.style.background = '#1e1e1e';
-      card.style.padding = '8px';
-      card.style.borderRadius = '6px';
+      card.style.padding = '10px';
+      card.style.borderRadius = '8px';
       card.style.gridColumn = '1 / -1';
+
       card.innerHTML = `
-        <strong>${participante.nome}</strong><br>
-        ${participante.telefone}<br><br>
-        <button onclick="compartilharPule()">Compartilhar Tudo no WhatsApp</button>
+        <strong>🎟️ PULE DO BOLÃO</strong><br><br>
+        👤 Nome: ${nomeCliente}<br>
+        📞 Telefone: ${telefoneCliente}<br>
+        🔐 Código de Segurança:<br>
+        <strong>${codigo}</strong><br><br>
+        <button onclick="compartilharPule('${codigo}')">
+          Compartilhar no WhatsApp
+        </button>
       `;
+
       div.appendChild(card);
 
-      // Mostra os números
+      // Números
       numeros.forEach(n => {
         const cell = document.createElement('div');
         cell.style.background = '#1e1e1e';
         cell.style.padding = '6px';
         cell.style.borderRadius = '4px';
-        cell.style.fontSize = '14px';
         cell.textContent = n;
         div.appendChild(cell);
       });
     });
 }
 
+
 /* ================= COMPARTILHAR ================= */
-function compartilharPule() {
-  const numeros = Array.from(document.querySelectorAll('#puleContainer > div:not(:first-child)'))
-                       .map(d => d.textContent);
-  fetch(API_URL, {
-    method:'POST',
-    body:JSON.stringify({
-      action:'compartilharPule',
-      nome:nomeCliente,
-      telefone:telefoneCliente,
-      numeros
-    })
-  }).then(r=>r.json())
-    .then(data=>{
-      if(data.success){
-        const texto=`Minha pule:\nNome: ${nomeCliente}\nTelefone: ${telefoneCliente}\nNúmeros: ${numeros.join(', ')}`;
-        window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(texto)}`,'_blank');
-      } else { alert('Erro ao compartilhar: '+data.message); }
-    });
+function compartilharPule(codigo) {
+  const numeros = Array.from(
+    document.querySelectorAll('#puleContainer > div:not(:first-child)')
+  ).map(d => d.textContent);
+
+  const texto = `
+🎟️ MINHA PULE DO BOLÃO
+👤 Nome: ${nomeCliente}
+📞 Telefone: ${telefoneCliente}
+🔐 Código: ${codigo}
+🎯 Números:
+${numeros.join(', ')}
+  `;
+
+  window.open(
+    `https://api.whatsapp.com/send?text=${encodeURIComponent(texto)}`,
+    '_blank'
+  );
 }
+
 
 // Auto login pelo localStorage
 if(localStorage.getItem('bolao_nome') && localStorage.getItem('bolao_telefone')){
