@@ -6,31 +6,27 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
-* { box-sizing: border-box; }
-
 body {
   font-family: 'Segoe UI', Arial, sans-serif;
   background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
   color: #fff;
-  min-height: 100vh;
   margin: 0;
-  display: flex;
-  justify-content: center;
-  align-items: center;
 }
 
-.card {
-  background: #111;
-  width: 100%;
+.hidden { display: none; }
+
+.container {
   max-width: 380px;
-  padding: 25px;
+  margin: auto;
+  background: #111;
+  padding: 22px;
   border-radius: 14px;
-  box-shadow: 0 10px 40px rgba(0,0,0,.6);
-  text-align: center;
+  box-shadow: 0 0 20px rgba(0,0,0,.6);
 }
 
-h2 {
-  margin-bottom: 15px;
+h2, h3 {
+  margin-top: 0;
+  text-align: center;
 }
 
 input, button {
@@ -43,7 +39,7 @@ input, button {
 }
 
 input {
-  background: #222;
+  background: #1e1e1e;
   color: #fff;
 }
 
@@ -56,52 +52,48 @@ button {
 
 button:disabled {
   background: #555;
-  cursor: not-allowed;
-}
-
-#qr img {
-  width: 220px;
-  margin: 15px auto;
 }
 
 .status {
-  margin-top: 10px;
+  margin-top: 12px;
+  text-align: center;
   font-weight: bold;
 }
 
-.hidden {
-  display: none;
+.qr img {
+  width: 220px;
+  margin-top: 10px;
+}
+
+.pixkey {
+  word-break: break-all;
+  background: #1c1c1c;
+  padding: 10px;
+  border-radius: 6px;
+  margin-top: 8px;
+  font-size: 13px;
 }
 
 /* SALA */
 .sala {
-  text-align: left;
+  max-width: 700px;
+  margin: auto;
+  padding: 20px;
 }
 
-.sala h3 {
-  margin-top: 0;
-}
-
-.lista {
-  background: #1e1e1e;
-  border-radius: 8px;
-  padding: 10px;
-  margin-top: 10px;
-  max-height: 180px;
-  overflow-y: auto;
-}
-
-.lista div {
-  padding: 6px;
-  border-bottom: 1px solid #333;
+.card {
+  background: #121212;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 15px;
 }
 </style>
 </head>
 
 <body>
 
-<!-- TELA PAGAMENTO -->
-<div class="card" id="telaPagamento">
+<!-- LOGIN / PIX -->
+<div class="container" id="loginArea">
   <h2>🎟️ Bolão Loteria Federal</h2>
 
   <input id="nome" placeholder="Seu nome completo">
@@ -110,21 +102,28 @@ button:disabled {
   <button onclick="gerarPix()">GERAR PIX</button>
 
   <div class="status" id="status"></div>
-  <div id="qr"></div>
+
+  <div class="qr" id="qr"></div>
 </div>
 
-<!-- SALA -->
-<div class="card hidden sala" id="telaSala">
-  <h3>👋 Bem-vindo, <span id="nomeUsuario"></span></h3>
-  <p>Você está oficialmente no bolão!</p>
+<!-- SALA DO BOLÃO -->
+<div class="sala hidden" id="salaBolao">
+  <h2>🎉 Sala do Bolão</h2>
 
-  <h4>👥 Participantes</h4>
-  <div class="lista" id="listaParticipantes"></div>
+  <div class="card">
+    <h3>👤 Bem-vindo</h3>
+    <p id="nomeCliente"></p>
+  </div>
 
-  <h4 style="margin-top:15px">🎯 Seus palpites</h4>
-  <p style="font-size:13px;color:#ccc">
-    (área pronta para você adicionar os palpites depois)
-  </p>
+  <div class="card">
+    <h3>👥 Participantes</h3>
+    <ul id="listaParticipantes"></ul>
+  </div>
+
+  <div class="card">
+    <h3>🎯 Palpites</h3>
+    <p>(área pronta para seus palpites)</p>
+  </div>
 </div>
 
 <script>
@@ -136,22 +135,21 @@ let nomeCliente = '';
 
 function gerarPix() {
   nomeCliente = nome.value.trim();
-  const tel = telefone.value.trim();
+  const telefoneCliente = telefone.value.trim();
 
-  if (!nomeCliente || !tel) {
-    status.innerText = 'Preencha nome e telefone';
+  if (!nomeCliente || !telefoneCliente) {
+    status.innerText = 'Preencha todos os dados';
     return;
   }
 
-  status.innerText = '⏳ Gerando PIX...';
+  status.innerText = 'Gerando PIX...';
 
   fetch(API_URL, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       action: 'createPayment',
       nome: nomeCliente,
-      telefone: tel
+      telefone: telefoneCliente
     })
   })
   .then(r => r.json())
@@ -165,10 +163,10 @@ function gerarPix() {
 
     qr.innerHTML = `
       <img src="data:image/png;base64,${data.qrCodeBase64}">
-      <p style="font-size:12px;word-break:break-all">${data.pixKey}</p>
+      <div class="pixkey">${data.pixKey}</div>
     `;
 
-    status.innerText = '💳 Aguardando pagamento...';
+    status.innerText = '⏳ Aguardando pagamento...';
     timer = setInterval(verificarPagamento, 5000);
   })
   .catch(() => {
@@ -179,25 +177,26 @@ function gerarPix() {
 function verificarPagamento() {
   fetch(API_URL, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       action: 'checkPayment',
-      paymentId
+      paymentId: paymentId
     })
   })
   .then(r => r.json())
   .then(data => {
     if (data.status === 'PAID') {
       clearInterval(timer);
+      status.innerText = '✅ Pagamento aprovado!';
       entrarNaSala();
     }
   });
 }
 
 function entrarNaSala() {
-  telaPagamento.classList.add('hidden');
-  telaSala.classList.remove('hidden');
-  nomeUsuario.innerText = nomeCliente;
+  document.getElementById('loginArea').classList.add('hidden');
+  document.getElementById('salaBolao').classList.remove('hidden');
+  document.getElementById('nomeCliente').innerText = nomeCliente;
+
   carregarParticipantes();
 }
 
@@ -205,11 +204,13 @@ function carregarParticipantes() {
   fetch(API_URL + '?action=infoBolao')
     .then(r => r.json())
     .then(data => {
-      listaParticipantes.innerHTML = '';
+      const ul = document.getElementById('listaParticipantes');
+      ul.innerHTML = '';
+
       data.participantes.forEach(p => {
-        const div = document.createElement('div');
-        div.innerText = `${p.nome} - ${p.telefone}`;
-        listaParticipantes.appendChild(div);
+        const li = document.createElement('li');
+        li.textContent = `${p.nome} - ${p.telefone}`;
+        ul.appendChild(li);
       });
     });
 }
@@ -217,4 +218,3 @@ function carregarParticipantes() {
 
 </body>
 </html>
-
