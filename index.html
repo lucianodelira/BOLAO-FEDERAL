@@ -142,9 +142,10 @@ ul li {
 </div>
 
 
-<h3>🎯 Palpites</h3>
-<button onclick="togglePule()" style="margin-bottom:10px">Ver Pule</button>
+<h3>🎯 Pule do Bolão</h3>
+<button onclick="gerarPule()" style="margin-bottom:10px">Gerar Pule</button>
 <div id="puleContainer" class="hidden" style="display:grid; grid-template-columns: 1fr 1fr; gap: 10px;"></div>
+
 
 
 
@@ -306,59 +307,65 @@ function carregarParticipantes() {
 
 
 
-function togglePule() {
+function gerarPule() {
   const div = document.getElementById('puleContainer');
-  if (div.classList.contains('hidden')) {
-    div.classList.remove('hidden');
-    carregarPule();
-  } else {
-    div.classList.add('hidden');
-  }
-}
+  div.classList.remove('hidden');
+  div.innerHTML = 'Carregando pule...';
 
-function carregarPule() {
-  fetch(API_URL + '?action=getPule')
+  fetch(`${API_URL}?action=getPule&nome=${encodeURIComponent(nomeCliente)}&telefone=${encodeURIComponent(telefoneCliente)}`)
     .then(r => r.json())
     .then(data => {
-      const div = document.getElementById('puleContainer');
       div.innerHTML = '';
+      if (!data.success) {
+        div.innerHTML = `<p>${data.message}</p>`;
+        return;
+      }
 
-      const participante = { nome: nomeCliente, telefone: telefoneCliente, id: idParticipante() };
-      const numeros = data.numeros;
+      const { participante, numeros } = data;
 
+      // Cria cartão do participante
+      const card = document.createElement('div');
+      card.style.background = '#1e1e1e';
+      card.style.padding = '8px';
+      card.style.borderRadius = '6px';
+      card.style.gridColumn = '1 / -1'; // ocupa duas colunas
+      card.innerHTML = `
+        <strong>${participante.nome}</strong><br>
+        ${participante.telefone}<br>
+        ID: ${participante.id}<br><br>
+        <button onclick="compartilharPule()">Compartilhar Tudo no WhatsApp</button>
+      `;
+      div.appendChild(card);
+
+      // Lista os números em células
       numeros.forEach(numero => {
         const cell = document.createElement('div');
         cell.style.background = '#1e1e1e';
-        cell.style.padding = '8px';
-        cell.style.borderRadius = '6px';
+        cell.style.padding = '6px';
+        cell.style.borderRadius = '4px';
         cell.style.fontSize = '14px';
-        cell.innerHTML = `
-          <strong>${participante.nome}</strong><br>
-          ${participante.telefone}<br>
-          ID: ${participante.id}<br>
-          Nº: ${numero}<br>
-          <button onclick="compartilharPule('${numero}')">Compartilhar</button>
-        `;
+        cell.textContent = numero;
         div.appendChild(cell);
       });
     });
 }
 
-function compartilharPule(numero) {
-  const participante = { nome: nomeCliente, telefone: telefoneCliente, id: idParticipante() };
+function compartilharPule() {
   fetch(API_URL, {
     method: 'POST',
     body: JSON.stringify({
       action: 'compartilharPule',
-      nome: participante.nome,
-      telefone: participante.telefone,
-      id: participante.id,
-      numeros: [numero]
+      nome: nomeCliente,
+      telefone: telefoneCliente,
+      id: idParticipante(),
+      numeros: [] // Aqui podemos enviar todos os números se quiser salvar
     })
   }).then(r => r.json())
     .then(data => {
       if (data.success) {
-        const texto = `Meu palpite: ${numero}\nNome: ${participante.nome}\nTelefone: ${participante.telefone}\nID: ${participante.id}`;
+        alert('Pule compartilhada e salva!');
+        // abre WhatsApp com todos os números
+        const texto = `Minha pule:\nNome: ${nomeCliente}\nTelefone: ${telefoneCliente}\nID: ${idParticipante()}\nNúmeros: ${Array.from(document.querySelectorAll('#puleContainer > div:not(:first-child)')).map(d => d.textContent).join(', ')}`;
         window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(texto)}`, '_blank');
       } else {
         alert('Erro ao compartilhar: ' + data.message);
@@ -366,13 +373,9 @@ function compartilharPule(numero) {
     });
 }
 
-// pega ID do participante (coluna F)
 function idParticipante() {
   return parseInt(localStorage.getItem('bolao_id') || 0);
 }
-
-
-  
   
 </script>
 
