@@ -4,38 +4,125 @@
 <meta charset="UTF-8">
 <title>Sala do Bolão - Loteria Federal</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <style>
-body { margin:0; font-family:'Segoe UI', Arial, sans-serif; background: linear-gradient(135deg,#0f2027,#203a43,#2c5364); color:#fff; }
-.hidden { display:none; }
-.container { max-width:380px; margin:40px auto; background:#111; padding:22px; border-radius:14px; }
-h2,h3 { text-align:center; margin-top:0; }
-input, button { width:100%; padding:12px; margin-top:10px; border-radius:8px; border:none; font-size:15px; }
-input { background:#1e1e1e; color:#fff; }
-button { background:#00e676; color:#000; font-weight:bold; cursor:pointer; }
-.status { margin-top:10px; text-align:center; }
-.qr img { width:220px; margin-top:10px; }
-.pixkey { background:#1c1c1c; padding:8px; border-radius:6px; margin-top:6px; word-break:break-all; font-size:13px; }
-.sala { max-width:800px; margin:auto; padding:20px; }
-.card { background:#121212; border-radius:12px; padding:16px; margin-bottom:15px; }
-ul { padding-left:18px; margin-top:10px; }
-ul li { background:#1e1e1e; padding:8px; border-radius:6px; margin-bottom:6px; font-size:14px; }
-#puleContainer { display:grid; grid-template-columns: 1fr 1fr; gap:10px; }
+body {
+  margin: 0;
+  font-family: 'Segoe UI', Arial, sans-serif;
+  background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+  color: #fff;
+}
+
+.hidden { display: none; }
+
+.container {
+  max-width: 380px;
+  margin: 40px auto;
+  background: #111;
+  padding: 22px;
+  border-radius: 14px;
+}
+
+h2, h3 {
+  text-align: center;
+  margin-top: 0;
+}
+
+input, button {
+  width: 100%;
+  padding: 12px;
+  margin-top: 10px;
+  border-radius: 8px;
+  border: none;
+  font-size: 15px;
+}
+
+input {
+  background: #1e1e1e;
+  color: #fff;
+}
+
+button {
+  background: #00e676;
+  color: #000;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.status {
+  margin-top: 10px;
+  text-align: center;
+}
+
+.qr img {
+  width: 220px;
+  margin-top: 10px;
+}
+
+.pixkey {
+  background: #1c1c1c;
+  padding: 8px;
+  border-radius: 6px;
+  margin-top: 6px;
+  word-break: break-all;
+  font-size: 13px;
+}
+
+/* SALA */
+.sala {
+  max-width: 800px;
+  margin: auto;
+  padding: 20px;
+}
+
+.card {
+  background: #121212;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 15px;
+}
+
+ul {
+  padding-left: 18px;
+}
+
+
+ul {
+  margin-top: 10px;
+}
+
+ul li {
+  background: #1e1e1e;
+  padding: 8px;
+  border-radius: 6px;
+  margin-bottom: 6px;
+  font-size: 14px;
+}
+
+
+
+  
 </style>
 </head>
+
 <body>
 
 <!-- LOGIN / PIX -->
 <div class="container" id="loginArea">
   <h2>🎟️ Bolão Loteria Federal</h2>
+
   <input id="nome" placeholder="Seu nome completo">
   <input id="telefone" placeholder="Telefone / WhatsApp">
+
   <button onclick="gerarPix()">GERAR PIX</button>
+
   <div class="status" id="status"></div>
   <div class="qr" id="qr"></div>
 </div>
 
 <!-- SALA -->
 <div class="sala hidden" id="salaBolao">
+
   <h2>🎉 Sala do Bolão</h2>
 
   <div class="card">
@@ -45,14 +132,23 @@ ul li { background:#1e1e1e; padding:8px; border-radius:6px; margin-bottom:6px; f
   </div>
 
   <div class="card">
-    <h3>👥 Participantes do Bolão</h3>
-    <button onclick="toggleParticipantes()" style="margin-bottom:10px">Ver participantes</button>
-    <ul id="listaParticipantes" class="hidden"></ul>
-  </div>
+  <h3>👥 Participantes do Bolão</h3>
 
-  <h3>🎯 Pule do Bolão</h3>
-  <button onclick="gerarPule()" style="margin-bottom:10px">Gerar Pule</button>
-  <div id="puleContainer" class="hidden"></div>
+  <button onclick="toggleParticipantes()" style="margin-bottom:10px">
+    Ver participantes
+  </button>
+
+  <ul id="listaParticipantes" class="hidden"></ul>
+</div>
+
+
+<h3>🎯 Pule do Bolão</h3>
+<button onclick="gerarPule()" style="margin-bottom:10px">Gerar Pule</button>
+<div id="puleContainer" class="hidden" style="display:grid; grid-template-columns: 1fr 1fr; gap: 10px;"></div>
+
+
+
+
 </div>
 
 <script>
@@ -156,18 +252,67 @@ function carregarParticipantes() {
     });
 }
 
-function toggleParticipantes(){
+
+
+function toggleParticipantes() {
   const ul = document.getElementById('listaParticipantes');
-  ul.classList.toggle('hidden');
+
+  if (ul.classList.contains('hidden')) {
+    ul.classList.remove('hidden');
+    carregarParticipantes();
+  } else {
+    ul.classList.add('hidden');
+  }
 }
 
-/* ================= PULE ================= */
+function carregarParticipantes() {
+  fetch(API_URL + '?action=infoBolao')
+    .then(r => r.json())
+    .then(data => {
+      const ul = document.getElementById('listaParticipantes');
+      ul.innerHTML = '';
+
+      if (!data.participantes || data.participantes.length === 0) {
+        ul.innerHTML = '<li>Nenhum participante confirmado ainda</li>';
+        return;
+      }
+
+      data.participantes.forEach(p => {
+        const li = document.createElement('li');
+        li.textContent = p.nome;
+        ul.appendChild(li);
+      });
+    });
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 function gerarPule() {
   const div = document.getElementById('puleContainer');
   div.classList.remove('hidden');
-  div.innerHTML = 'Gerando pule...';
+  div.innerHTML = 'Carregando pule...';
 
-  fetch(`${API_URL}?action=getPule`)
+  fetch(`${API_URL}?action=getPule&nome=${encodeURIComponent(nomeCliente)}&telefone=${encodeURIComponent(telefoneCliente)}`)
     .then(r => r.json())
     .then(data => {
       div.innerHTML = '';
@@ -176,82 +321,221 @@ function gerarPule() {
         return;
       }
 
-      const { numeros, codigo } = data;
+      const { participante, numeros } = data;
 
-      // Cartão da PULE preenchido automaticamente
+      // Cria cartão do participante
       const card = document.createElement('div');
       card.style.background = '#1e1e1e';
-      card.style.padding = '12px';
-      card.style.borderRadius = '8px';
-      card.style.gridColumn = '1 / -1';
-      card.style.fontSize = '14px';
-      card.style.lineHeight = '1.5';
-
+      card.style.padding = '8px';
+      card.style.borderRadius = '6px';
+      card.style.gridColumn = '1 / -1'; // ocupa duas colunas
       card.innerHTML = `
-        <strong>🎟️ PULE DO BOLÃO</strong><br><br>
-        👤 Nome: ${nomeCliente}<br>
-        📞 Telefone: ${telefoneCliente}<br>
-        🔐 Código de Segurança: <strong>${codigo}</strong><br><br>
-        🎯 Números:<br>
-        ${numeros.join(', ')}
+        <strong>${participante.nome}</strong><br>
+        ${participante.telefone}<br>
+        ID: ${participante.id}<br><br>
+        <button onclick="compartilharPule()">Compartilhar Tudo no WhatsApp</button>
       `;
-
       div.appendChild(card);
 
-      // Botão para compartilhar no WhatsApp
-      const btn = document.createElement('button');
-      btn.textContent = 'Compartilhar no WhatsApp';
-      btn.style.marginTop = '8px';
-      btn.onclick = () => compartilharPule(codigo, numeros);
-      card.appendChild(btn);
+      // Lista os números em células
+      numeros.forEach(numero => {
+        const cell = document.createElement('div');
+        cell.style.background = '#1e1e1e';
+        cell.style.padding = '6px';
+        cell.style.borderRadius = '4px';
+        cell.style.fontSize = '14px';
+        cell.textContent = numero;
+        div.appendChild(cell);
+      });
+    });
+}
+
+function compartilharPule() {
+  fetch(API_URL, {
+    method: 'POST',
+    body: JSON.stringify({
+      action: 'compartilharPule',
+      nome: nomeCliente,
+      telefone: telefoneCliente,
+      id: idParticipante(),
+      numeros: [] // Aqui podemos enviar todos os números se quiser salvar
+    })
+  }).then(r => r.json())
+    .then(data => {
+      if (data.success) {
+        alert('Pule compartilhada e salva!');
+        // abre WhatsApp com todos os números
+        const texto = `Minha pule:\nNome: ${nomeCliente}\nTelefone: ${telefoneCliente}\nID: ${idParticipante()}\nNúmeros: ${Array.from(document.querySelectorAll('#puleContainer > div:not(:first-child)')).map(d => d.textContent).join(', ')}`;
+        window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(texto)}`, '_blank');
+      } else {
+        alert('Erro ao compartilhar: ' + data.message);
+      }
+    });
+}
+
+function idParticipante() {
+  return parseInt(localStorage.getItem('bolao_id') || 0);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function entrarNaSala(nome, telefone) {
+  loginArea.classList.add('hidden');
+  salaBolao.classList.remove('hidden');
+
+  meuNome.innerText = nome;
+  meuTelefone.innerText = telefone;
+
+  // Busca participante ativo e salva ID
+  fetch(`${API_URL}?action=getPule&nome=${encodeURIComponent(nome)}&telefone=${encodeURIComponent(telefone)}`)
+    .then(r => r.json())
+    .then(data => {
+      if (data.success) {
+        localStorage.setItem('bolao_id', data.participante.id);
+      } else {
+        console.error('Participante não encontrado ou inativo');
+      }
+    });
+
+  carregarParticipantes();
+}
+
+
+  function gerarPule() {
+  const div = document.getElementById('puleContainer');
+  div.classList.remove('hidden');
+  div.innerHTML = 'Carregando pule...';
+
+  fetch(`${API_URL}?action=getPule&nome=${encodeURIComponent(nomeCliente)}&telefone=${encodeURIComponent(telefoneCliente)}`)
+    .then(r => r.json())
+    .then(data => {
+      div.innerHTML = '';
+      if (!data.success) {
+        div.innerHTML = `<p>${data.message}</p>`;
+        return;
+      }
+
+      const { participante, numeros } = data;
+
+      // Cartão do participante
+      const card = document.createElement('div');
+      card.style.background = '#1e1e1e';
+      card.style.padding = '8px';
+      card.style.borderRadius = '6px';
+      card.style.gridColumn = '1 / -1';
+      card.innerHTML = `
+        <strong>${participante.nome}</strong><br>
+        ${participante.telefone}<br>
+        ID: ${participante.id}<br><br>
+        <button onclick="compartilharPule()">Compartilhar Tudo no WhatsApp</button>
+      `;
+      div.appendChild(card);
+
+      // Lista todos os números da aba PALPITES
+      numeros.forEach(numero => {
+        const cell = document.createElement('div');
+        cell.style.background = '#1e1e1e';
+        cell.style.padding = '6px';
+        cell.style.borderRadius = '4px';
+        cell.style.fontSize = '14px';
+        cell.textContent = numero;
+        div.appendChild(cell);
+      });
     });
 }
 
 
 
-/* ================= COMPARTILHAR ================= */
-function compartilharPule(codigo, numeros) {
-  const texto = `
-🎟️ MINHA PULE DO BOLÃO
-👤 Nome: ${nomeCliente}
-📞 Telefone: ${telefoneCliente}
-🔐 Código: ${codigo}
-🎯 Números:
-${numeros.join(', ')}
-  `;
+function compartilharPule() {
+  const numeros = Array.from(document.querySelectorAll('#puleContainer > div:not(:first-child)'))
+                       .map(d => d.textContent);
 
-  window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(texto)}`, '_blank');
+  fetch(API_URL, {
+    method: 'POST',
+    body: JSON.stringify({
+      action: 'compartilharPule',
+      nome: nomeCliente,
+      telefone: telefoneCliente,
+      id: idParticipante(),
+      numeros: numeros // envia todos os números para salvar na planilha
+    })
+  }).then(r => r.json())
+    .then(data => {
+      if (data.success) {
+        const texto = `Minha pule:\nNome: ${nomeCliente}\nTelefone: ${telefoneCliente}\nID: ${idParticipante()}\nNúmeros: ${numeros.join(', ')}`;
+        window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(texto)}`, '_blank');
+      } else {
+        alert('Erro ao compartilhar: ' + data.message);
+      }
+    });
 }
 
 
-// Auto login pelo localStorage
-if(localStorage.getItem('bolao_nome') && localStorage.getItem('bolao_telefone')){
-  nomeCliente = localStorage.getItem('bolao_nome');
-  telefoneCliente = localStorage.getItem('bolao_telefone');
-  entrarNaSala(nomeCliente, telefoneCliente);
-}
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  
 
 
 
