@@ -1,56 +1,92 @@
-const API = "https://script.google.com/macros/s/AKfycbwPXlgv795gYZZIXU8oi56a-yd4iQZ_5BGGYpQP_LK9jJFfBEY83uZ8qluXEDJncBjtKA/exec";
-const MAX = 200;
+const API_URL = "https://script.google.com/macros/s/AKfycbwPXlgv795gYZZIXU8oi56a-yd4iQZ_5BGGYpQP_LK9jJFfBEY83uZ8qluXEDJncBjtKA/exec";
 
-function participar(){
-  const nome = nomeInput.value.trim();
-  const telefone = telefoneInput.value.trim();
-  if(!nome || !telefone){
-    statusMsg.innerText = "Preencha nome e telefone";
+let paymentIdGlobal = null;
+
+function participar() {
+  const nome = document.getElementById("nome").value.trim();
+  const telefone = document.getElementById("telefone").value.trim();
+
+  if (!nome || !telefone) {
+    alert("Preencha nome e telefone");
     return;
   }
-  localStorage.setItem("pendente", JSON.stringify({nome, telefone}));
-  openPaymentModal();
+
+  // Salva temporariamente
+  localStorage.setItem("bolao_user", JSON.stringify({ nome, telefone }));
+
+  criarPix();
 }
 
-async function carregar(){
-  const r = await fetch(API+"?action=infoBolao");
-  const d = await r.json();
-
-  livres.innerText = MAX - d.total;
-  ocupadas.innerText = d.total;
-
-  lista.innerHTML = "";
-  d.participantes.forEach(p=>{
-    const li=document.createElement("li");
-    li.textContent = `${p.nome} - ${p.telefone}`;
-    lista.appendChild(li);
-  });
-
-  if(localStorage.getItem("membro")){
-    const m = JSON.parse(localStorage.getItem("membro"));
-    register.classList.add("hidden");
-    areaMembro.classList.remove("hidden");
-    mNome.innerText = m.nome;
-    mTel.innerText = m.telefone;
-  }
-}
-
-function verBolao(){
-  bolao.classList.toggle("hidden");
-}
-
-if(localStorage.getItem("privilegeAccess")==="true"){
-  const u = JSON.parse(localStorage.getItem("pendente"));
-  fetch(API+"?action=registrar&nome="+encodeURIComponent(u.nome)+"&telefone="+encodeURIComponent(u.telefone))
-  .then(r=>r.json())
-  .then(d=>{
-    if(d.success){
-      localStorage.setItem("membro", JSON.stringify(u));
-      localStorage.removeItem("pendente");
-      localStorage.removeItem("privilegeAccess");
-      location.reload();
+/* =========================
+   CRIAR PIX
+========================= */
+function criarPix() {
+  fetch(API_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      action: "createPayment",
+      amount: 18
+    })
+  })
+  .then(r => r.json())
+  .then(d => {
+    if (!d.success) {
+      alert("Erro ao gerar Pix");
+      return;
     }
+
+    paymentIdGlobal = d.paymentId;
+
+    mostrarPix(d.pixKey, d.qrCodeBase64);
+    iniciarVerificacao();
   });
 }
 
-carregar();
+/* =========================
+   MOSTRAR PIX NA TELA
+========================= */
+function mostrarPix(copiaCola, qrBase64) {
+  document.getElementById("pixArea").style.display = "block";
+  document.getElementById("pixCopia").value = copiaCola;
+  document.getElementById("pixQr").src = `data:image/png;base64,${qrBase64}`;
+}
+
+/* =========================
+   VERIFICAR PAGAMENTO
+========================= */
+function iniciarVerificacao() {
+  const interval = setInterval(() => {
+    fetch(API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action: "checkPayment",
+        paymentId: paymentIdGlobal
+      })
+    })
+    .then(r => r.json())
+    .then(d => {
+      if (d.status === "approved" || d.status === "PAID") {
+        clearInterval(interval);
+        liberarAcesso();
+      }
+    });
+  }, 5000);
+}
+
+/* =========================
+   LIBERAR BOLÃO
+========================= */
+function liberarAcesso() {
+  const user = JSON.parse(localStorage.getItem("bolao_user"));
+
+  fetch(`${API_URL}?action=registrar&nome=${encodeURIComponent(user.nome)}&telefone=${encodeURIComponent(user.telefone)}`)
+    .then(r => r.json())
+    .then(d => {
+      if (d.success) {
+        alert("Pagamento confirmado! Você entrou no bolão 🎉");
+        location.reload();
+      }
+    });
+}
