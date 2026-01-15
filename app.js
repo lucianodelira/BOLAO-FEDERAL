@@ -1,92 +1,68 @@
-const API_URL = "https://script.google.com/macros/s/AKfycbwPXlgv795gYZZIXU8oi56a-yd4iQZ_5BGGYpQP_LK9jJFfBEY83uZ8qluXEDJncBjtKA/exec";
+const API_URL = 'https://script.google.com/macros/s/AKfycbzS32wgwNYZhNQhXQ17OSQUx56NbRuZmrv5l0Hi2cm7k_0WzqZ-BtfQy3BIKzoQZaId/exec';
 
-let paymentIdGlobal = null;
+let paymentId = null;
 
 function participar() {
-  const nome = document.getElementById("nome").value.trim();
-  const telefone = document.getElementById("telefone").value.trim();
+  const nome = document.getElementById('nome').value.trim();
+  const telefone = document.getElementById('telefone').value.trim();
 
   if (!nome || !telefone) {
-    alert("Preencha nome e telefone");
+    alert('Preencha nome e telefone');
     return;
   }
 
-  // Salva temporariamente
-  localStorage.setItem("bolao_user", JSON.stringify({ nome, telefone }));
-
-  criarPix();
-}
-
-/* =========================
-   CRIAR PIX
-========================= */
-function criarPix() {
   fetch(API_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      action: "createPayment",
-      amount: 18
+      action: 'createPayment',
+      nome,
+      telefone
     })
   })
   .then(r => r.json())
   .then(d => {
     if (!d.success) {
-      alert("Erro ao gerar Pix");
+      alert(d.message || 'Erro');
       return;
     }
 
-    paymentIdGlobal = d.paymentId;
+    paymentId = d.paymentId;
 
-    mostrarPix(d.pixKey, d.qrCodeBase64);
-    iniciarVerificacao();
+    document.getElementById('pixQr').src =
+      'data:image/png;base64,' + d.qrCodeBase64;
+
+    document.getElementById('pixCopia').value = d.pixKey;
+    document.getElementById('pixArea').classList.remove('hidden');
+
+    verificarPagamento();
   });
 }
 
-/* =========================
-   MOSTRAR PIX NA TELA
-========================= */
-function mostrarPix(copiaCola, qrBase64) {
-  document.getElementById("pixArea").style.display = "block";
-  document.getElementById("pixCopia").value = copiaCola;
-  document.getElementById("pixQr").src = `data:image/png;base64,${qrBase64}`;
-}
-
-/* =========================
-   VERIFICAR PAGAMENTO
-========================= */
-function iniciarVerificacao() {
-  const interval = setInterval(() => {
+function verificarPagamento() {
+  const timer = setInterval(() => {
     fetch(API_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        action: "checkPayment",
-        paymentId: paymentIdGlobal
+        action: 'checkPayment',
+        paymentId
       })
     })
     .then(r => r.json())
     .then(d => {
-      if (d.status === "approved" || d.status === "PAID") {
-        clearInterval(interval);
-        liberarAcesso();
+      if (d.status === 'PAID') {
+        clearInterval(timer);
+        alert('Pagamento confirmado!');
+        location.reload();
       }
     });
   }, 5000);
 }
 
-/* =========================
-   LIBERAR BOLÃO
-========================= */
-function liberarAcesso() {
-  const user = JSON.parse(localStorage.getItem("bolao_user"));
-
-  fetch(`${API_URL}?action=registrar&nome=${encodeURIComponent(user.nome)}&telefone=${encodeURIComponent(user.telefone)}`)
-    .then(r => r.json())
-    .then(d => {
-      if (d.success) {
-        alert("Pagamento confirmado! Você entrou no bolão 🎉");
-        location.reload();
-      }
-    });
+function copiarPix() {
+  navigator.clipboard.writeText(
+    document.getElementById('pixCopia').value
+  );
+  alert('PIX copiado');
 }
