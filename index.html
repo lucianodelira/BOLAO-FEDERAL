@@ -1,90 +1,148 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<title>Bolão Loteria Federal</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<link rel="stylesheet" href="MPayment/Styles.css">
-<style>
-body { font-family: Arial; background:#f2f2f2; margin:0 }
-header { background:#0b5ed7; color:#fff; padding:15px; text-align:center }
-.container { max-width:800px; margin:auto; padding:15px }
-.card { background:#fff; padding:15px; border-radius:8px; margin-bottom:15px }
-input, button { width:100%; padding:10px; margin-top:10px }
-button { background:#0b5ed7; color:#fff; border:none; border-radius:6px; cursor:pointer }
-.stats { display:flex; gap:10px }
-.stats div { flex:1; background:#e9ecef; padding:10px; border-radius:6px; text-align:center }
-.hidden { display:none }
-ul { list-style:none; padding:0 }
-li { padding:6px; border-bottom:1px solid #ddd }
-</style>
+  <meta charset="UTF-8" />
+  <title>Bolão Loteria Federal</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="Styles.css" />
+  <style>
+    body { font-family: Arial, sans-serif; background:#f4f4f4; margin:0; padding:0 }
+    header { background:#1d3557; color:#fff; padding:15px; text-align:center }
+    .container { padding:20px; max-width:900px; margin:auto }
+    .card { background:#fff; padding:20px; border-radius:10px; margin-bottom:20px }
+    input, button { padding:10px; width:100%; margin-top:10px }
+    button { background:#1d3557; color:#fff; border:none; border-radius:6px; cursor:pointer }
+    button:disabled { background:#999 }
+    .stats { display:flex; justify-content:space-between; gap:10px }
+    .stats div { flex:1; background:#e9ecef; padding:10px; border-radius:8px; text-align:center }
+    ul { list-style:none; padding:0 }
+    li { padding:8px; border-bottom:1px solid #ddd }
+    .hidden { display:none }
+  </style>
 </head>
-
 <body>
-
 <header>
-<h2>🎟️ Bolão da Loteria Federal</h2>
-<p>Cota: R$ 18 • Total: 200</p>
+  <h1>🎟️ Bolão da Loteria Federal</h1>
+  <p>Valor da cota: R$ 18,00 | Total: 200 cotas</p>
 </header>
 
 <div class="container">
 
-<div class="card" id="register">
-<h3>Entrar no Bolão</h3>
-<input id="nome" placeholder="Nome completo">
-<input id="telefone" placeholder="Telefone (WhatsApp)">
-<button onclick="participar()">Participar do Bolão</button>
-<p id="statusMsg"></p>
-</div>
-<div class="card hidden" id="pixArea">
-  <h3>💳 Pague o PIX para entrar no Bolão</h3>
+  <div class="card" id="registerCard">
+    <h2>Entrar no Bolão</h2>
+    <input type="text" id="name" placeholder="Seu nome completo" />
+    <input type="tel" id="phone" placeholder="Seu telefone (WhatsApp)" />
+    <button onclick="startPayment()">Gerar PIX e Participar</button>
+  </div>
 
-  <img id="pixQr" style="width:220px; display:block; margin:auto">
+  <div class="card">
+    <h3>Status do Bolão</h3>
+    <div class="stats">
+      <div>
+        <strong id="freeCotas">200</strong><br />Disponíveis
+      </div>
+      <div>
+        <strong id="usedCotas">0</strong><br />Ocupadas
+      </div>
+      <div>
+        <strong>200</strong><br />Total
+      </div>
+    </div>
+  </div>
 
-  <p>Código PIX (copie e cole):</p>
-  <input id="pixCopia" readonly>
+  <div class="card hidden" id="memberArea">
+    <h2>Bem-vindo ao Bolão</h2>
+    <p><strong>Nome:</strong> <span id="memberName"></span></p>
+    <p><strong>Telefone:</strong> <span id="memberPhone"></span></p>
+    <button onclick="showPalpites()">Ver meu bolão</button>
+  </div>
 
-  <button onclick="copiarPix()">Copiar código PIX</button>
+  <div class="card hidden" id="palpitesArea">
+    <h3>Palpites do Bolão</h3>
+    <p>(Exemplo ilustrativo – números oficiais podem ser inseridos manualmente)</p>
+    <ul>
+      <li>Bilhete: 12345</li>
+      <li>Bilhete: 67890</li>
+      <li>Bilhete: 54321</li>
+    </ul>
+  </div>
 
-  <p id="pixStatus" style="margin-top:10px;color:#0b5ed7">
-    Aguardando pagamento...
-  </p>
-</div>
-
-<div class="card">
-<h3>Status do Bolão</h3>
-<div class="stats">
-<div><b id="livres">0</b><br>Disponíveis</div>
-<div><b id="ocupadas">0</b><br>Ocupadas</div>
-<div><b>200</b><br>Total</div>
-</div>
-</div>
-
-<div class="card hidden" id="areaMembro">
-<h3>Você está participando 🎉</h3>
-<p><b>Nome:</b> <span id="mNome"></span></p>
-<p><b>Telefone:</b> <span id="mTel"></span></p>
-<button onclick="verBolao()">Ver meu Bolão</button>
-</div>
-
-<div class="card hidden" id="bolao">
-<h3>Palpites do Bolão</h3>
-<ul>
-<li>Bilhete 12345</li>
-<li>Bilhete 67890</li>
-<li>Bilhete 54321</li>
-</ul>
-</div>
-
-<div class="card">
-<h3>👥 Participantes</h3>
-<ul id="lista"></ul>
-</div>
+  <div class="card">
+    <h3>👥 Participantes</h3>
+    <ul id="participantsList"></ul>
+  </div>
 
 </div>
 
-<script src="MPayment/Script.js"></script>
-<script src="MPayment/Modal.js"></script>
-<script src="app.js"></script>
+<script src="Modal.js"></script>
+<script src="Script.js"></script>
+<script>
+const MAX_COTAS = 200;
+
+function getParticipants() {
+  return JSON.parse(localStorage.getItem('participants') || '[]');
+}
+
+function saveParticipants(list) {
+  localStorage.setItem('participants', JSON.stringify(list));
+}
+
+function updateStats() {
+  const list = getParticipants();
+  document.getElementById('usedCotas').innerText = list.length;
+  document.getElementById('freeCotas').innerText = MAX_COTAS - list.length;
+  const ul = document.getElementById('participantsList');
+  ul.innerHTML = '';
+  list.forEach(p => {
+    const li = document.createElement('li');
+    li.textContent = p.name + ' - ' + p.phone;
+    ul.appendChild(li);
+  });
+}
+
+function startPayment() {
+  const name = document.getElementById('name').value.trim();
+  const phone = document.getElementById('phone').value.trim();
+  if (!name || !phone) {
+    alert('Preencha nome e telefone');
+    return;
+  }
+  localStorage.setItem('pendingUser', JSON.stringify({ name, phone }));
+  openPaymentModal();
+}
+
+function unlockAccess() {
+  const user = JSON.parse(localStorage.getItem('pendingUser'));
+  if (!user) return;
+  const list = getParticipants();
+  if (list.length >= MAX_COTAS) return;
+  list.push(user);
+  saveParticipants(list);
+  localStorage.setItem('member', JSON.stringify(user));
+  localStorage.removeItem('pendingUser');
+}
+
+function loadMember() {
+  const member = JSON.parse(localStorage.getItem('member'));
+  if (!member) return;
+  document.getElementById('registerCard').classList.add('hidden');
+  document.getElementById('memberArea').classList.remove('hidden');
+  document.getElementById('memberName').innerText = member.name;
+  document.getElementById('memberPhone').innerText = member.phone;
+}
+
+function showPalpites() {
+  document.getElementById('palpitesArea').classList.toggle('hidden');
+}
+
+// Integração: quando o Script.js libera acesso
+if (localStorage.getItem('privilegeAccess') === 'true') {
+  unlockAccess();
+  localStorage.removeItem('privilegeAccess');
+}
+
+updateStats();
+loadMember();
+</script>
 </body>
 </html>
