@@ -5,6 +5,7 @@
   <title>Bolão Loteria Federal</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="stylesheet" href="Styles.css" />
+
   <style>
     body { font-family: Arial, sans-serif; background:#f4f4f4; margin:0; padding:0 }
     header { background:#1d3557; color:#fff; padding:15px; text-align:center }
@@ -20,7 +21,9 @@
     .hidden { display:none }
   </style>
 </head>
+
 <body>
+
 <header>
   <h1>🎟️ Bolão da Loteria Federal</h1>
   <p>Valor da cota: R$ 18,00 | Total: 200 cotas</p>
@@ -28,6 +31,7 @@
 
 <div class="container">
 
+  <!-- CADASTRO -->
   <div class="card" id="registerCard">
     <h2>Entrar no Bolão</h2>
     <input type="text" id="name" placeholder="Seu nome completo" />
@@ -35,38 +39,31 @@
     <button onclick="startPayment()">Gerar PIX e Participar</button>
   </div>
 
+  <!-- PIX -->
+  <div class="card hidden" id="pixArea">
+    <h3>Pagamento PIX</h3>
+    <img id="pixQr" style="width:220px" />
+    <input id="pixCopia" readonly />
+    <p id="pixStatus">Aguardando pagamento...</p>
+  </div>
+
+  <!-- STATUS -->
   <div class="card">
     <h3>Status do Bolão</h3>
     <div class="stats">
       <div>
-        <strong id="freeCotas">200</strong><br />Disponíveis
+        <strong id="freeCotas">200</strong><br>Disponíveis
       </div>
       <div>
-        <strong id="usedCotas">0</strong><br />Ocupadas
+        <strong id="usedCotas">0</strong><br>Ocupadas
       </div>
       <div>
-        <strong>200</strong><br />Total
+        <strong>200</strong><br>Total
       </div>
     </div>
   </div>
 
-  <div class="card hidden" id="memberArea">
-    <h2>Bem-vindo ao Bolão</h2>
-    <p><strong>Nome:</strong> <span id="memberName"></span></p>
-    <p><strong>Telefone:</strong> <span id="memberPhone"></span></p>
-    <button onclick="showPalpites()">Ver meu bolão</button>
-  </div>
-
-  <div class="card hidden" id="palpitesArea">
-    <h3>Palpites do Bolão</h3>
-    <p>(Exemplo ilustrativo – números oficiais podem ser inseridos manualmente)</p>
-    <ul>
-      <li>Bilhete: 12345</li>
-      <li>Bilhete: 67890</li>
-      <li>Bilhete: 54321</li>
-    </ul>
-  </div>
-
+  <!-- PARTICIPANTES -->
   <div class="card">
     <h3>👥 Participantes</h3>
     <ul id="participantsList"></ul>
@@ -74,76 +71,102 @@
 
 </div>
 
-<script src="Modal.js"></script>
-<script src="Script.js"></script>
+<!-- SCRIPT ÚNICO -->
 <script>
-const MAX_COTAS = 200;
+/* ================= CONFIG ================= */
 
-function getParticipants() {
-  return JSON.parse(localStorage.getItem('participants') || '[]');
-}
+// 🔴 COLE A URL DO SEU WEB APP AQUI
+const API_URL = 'https://script.google.com/macros/s/AKfycbzS32wgwNYZhNQhXQ17OSQUx56NbRuZmrv5l0Hi2cm7k_0WzqZ-BtfQy3BIKzoQZaId/exec';
 
-function saveParticipants(list) {
-  localStorage.setItem('participants', JSON.stringify(list));
-}
+let paymentId = null;
 
-function updateStats() {
-  const list = getParticipants();
-  document.getElementById('usedCotas').innerText = list.length;
-  document.getElementById('freeCotas').innerText = MAX_COTAS - list.length;
-  const ul = document.getElementById('participantsList');
-  ul.innerHTML = '';
-  list.forEach(p => {
-    const li = document.createElement('li');
-    li.textContent = p.name + ' - ' + p.phone;
-    ul.appendChild(li);
-  });
-}
+/* ================= FUNÇÕES ================= */
 
 function startPayment() {
-  const name = document.getElementById('name').value.trim();
-  const phone = document.getElementById('phone').value.trim();
-  if (!name || !phone) {
+  const nome = document.getElementById('name').value.trim();
+  const telefone = document.getElementById('phone').value.trim();
+
+  if (!nome || !telefone) {
     alert('Preencha nome e telefone');
     return;
   }
-  localStorage.setItem('pendingUser', JSON.stringify({ name, phone }));
-  openPaymentModal();
+
+  fetch(API_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      action: 'createPayment',
+      nome,
+      telefone
+    })
+  })
+  .then(r => r.json())
+  .then(d => {
+    if (!d.success) {
+      alert(d.message || 'Erro ao gerar PIX');
+      return;
+    }
+
+    paymentId = d.paymentId;
+
+    document.getElementById('pixQr').src =
+      'data:image/png;base64,' + d.qrCodeBase64;
+
+    document.getElementById('pixCopia').value = d.pixKey;
+    document.getElementById('pixArea').classList.remove('hidden');
+
+    verificarPagamento();
+  })
+  .catch(() => {
+    alert('Erro de conexão com o servidor');
+  });
 }
 
-function unlockAccess() {
-  const user = JSON.parse(localStorage.getItem('pendingUser'));
-  if (!user) return;
-  const list = getParticipants();
-  if (list.length >= MAX_COTAS) return;
-  list.push(user);
-  saveParticipants(list);
-  localStorage.setItem('member', JSON.stringify(user));
-  localStorage.removeItem('pendingUser');
+function verificarPagamento() {
+  const timer = setInterval(() => {
+    fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'checkPayment',
+        paymentId
+      })
+    })
+    .then(r => r.json())
+    .then(d => {
+      if (d.status === 'PAID') {
+        clearInterval(timer);
+        document.getElementById('pixStatus').innerText =
+          'Pagamento confirmado 🎉';
+        carregarSala();
+      }
+    });
+  }, 5000);
 }
 
-function loadMember() {
-  const member = JSON.parse(localStorage.getItem('member'));
-  if (!member) return;
-  document.getElementById('registerCard').classList.add('hidden');
-  document.getElementById('memberArea').classList.remove('hidden');
-  document.getElementById('memberName').innerText = member.name;
-  document.getElementById('memberPhone').innerText = member.phone;
+function carregarSala() {
+  fetch(API_URL + '?action=infoBolao')
+    .then(r => r.json())
+    .then(d => {
+      document.getElementById('usedCotas').innerText = d.ocupadas;
+      document.getElementById('freeCotas').innerText =
+        d.total - d.ocupadas;
+
+      const ul = document.getElementById('participantsList');
+      ul.innerHTML = '';
+
+      d.participantes.forEach(p => {
+        const li = document.createElement('li');
+        li.textContent = p.nome + ' - ' + p.telefone;
+        ul.appendChild(li);
+      });
+    });
 }
 
-function showPalpites() {
-  document.getElementById('palpitesArea').classList.toggle('hidden');
-}
+/* ================= INIT ================= */
 
-// Integração: quando o Script.js libera acesso
-if (localStorage.getItem('privilegeAccess') === 'true') {
-  unlockAccess();
-  localStorage.removeItem('privilegeAccess');
-}
-
-updateStats();
-loadMember();
+carregarSala();
 </script>
+
 </body>
 </html>
-
