@@ -142,10 +142,10 @@ ul li {
 </div>
 
 
-  <div class="card">
-    <h3>🎯 Palpites</h3>
-    <p>(os palpites serão exibidos aqui)</p>
-  </div>
+ <h3>🎯 Palpites</h3>
+<button onclick="togglePalpites()" style="margin-bottom:10px">Ver Palpites</button>
+<ul id="listaPalpites" class="hidden"></ul>
+
 
 </div>
 
@@ -284,6 +284,83 @@ function carregarParticipantes() {
 }
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function togglePalpites() {
+  const ul = document.getElementById('listaPalpites');
+  if (ul.classList.contains('hidden')) {
+    ul.classList.remove('hidden');
+    carregarPalpites();
+  } else {
+    ul.classList.add('hidden');
+  }
+}
+
+function carregarPalpites() {
+  fetch(API_URL + '?action=getPalpites')
+    .then(r => r.json())
+    .then(data => {
+      const ul = document.getElementById('listaPalpites');
+      ul.innerHTML = '';
+      data.palpites.forEach(p => {
+        const li = document.createElement('li');
+        li.innerHTML = `
+          Número: ${p.numero} 
+          <button onclick="compartilhar('${p.numero}')">Compartilhar</button>
+        `;
+        ul.appendChild(li);
+      });
+    });
+}
+
+function compartilhar(numero) {
+  // registra compartilhamento na planilha
+  fetch(API_URL, {
+    method: 'POST',
+    body: JSON.stringify({
+      action: 'compartilharPalpite',
+      nome: nomeCliente,
+      telefone: telefoneCliente,
+      id: idParticipante(), // função abaixo pega coluna F
+      numeros: [numero]
+    })
+  }).then(r => r.json())
+    .then(data => {
+      if (data.success) {
+        // abre WhatsApp com o texto do palpite
+        const texto = `Meu palpite: ${numero}`;
+        window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(texto)}`, '_blank');
+      } else {
+        alert('Erro ao compartilhar: ' + data.message);
+      }
+    });
+}
+
+// função para buscar ID do participante (coluna F)
+function idParticipante() {
+  return parseInt(localStorage.getItem('bolao_id') || 0); // você pode salvar no login
+}
+
+
+
+
+
+  
   
 </script>
 
