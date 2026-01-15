@@ -178,45 +178,39 @@ function gerarPule() {
 
       const { numeros, codigo } = data;
 
-      // Cartão da pule
+      // Cartão da PULE preenchido automaticamente
       const card = document.createElement('div');
       card.style.background = '#1e1e1e';
-      card.style.padding = '10px';
+      card.style.padding = '12px';
       card.style.borderRadius = '8px';
       card.style.gridColumn = '1 / -1';
+      card.style.fontSize = '14px';
+      card.style.lineHeight = '1.5';
 
       card.innerHTML = `
         <strong>🎟️ PULE DO BOLÃO</strong><br><br>
         👤 Nome: ${nomeCliente}<br>
         📞 Telefone: ${telefoneCliente}<br>
-        🔐 Código de Segurança:<br>
-        <strong>${codigo}</strong><br><br>
-        <button onclick="compartilharPule('${codigo}')">
-          Compartilhar no WhatsApp
-        </button>
+        🔐 Código de Segurança: <strong>${codigo}</strong><br><br>
+        🎯 Números:<br>
+        ${numeros.join(', ')}
       `;
 
       div.appendChild(card);
 
-      // Números
-      numeros.forEach(n => {
-        const cell = document.createElement('div');
-        cell.style.background = '#1e1e1e';
-        cell.style.padding = '6px';
-        cell.style.borderRadius = '4px';
-        cell.textContent = n;
-        div.appendChild(cell);
-      });
+      // Botão para compartilhar no WhatsApp
+      const btn = document.createElement('button');
+      btn.textContent = 'Compartilhar no WhatsApp';
+      btn.style.marginTop = '8px';
+      btn.onclick = () => compartilharPule(codigo, numeros);
+      card.appendChild(btn);
     });
 }
 
 
-/* ================= COMPARTILHAR ================= */
-function compartilharPule(codigo) {
-  const numeros = Array.from(
-    document.querySelectorAll('#puleContainer > div:not(:first-child)')
-  ).map(d => d.textContent);
 
+/* ================= COMPARTILHAR ================= */
+function compartilharPule(codigo, numeros) {
   const texto = `
 🎟️ MINHA PULE DO BOLÃO
 👤 Nome: ${nomeCliente}
@@ -226,10 +220,7 @@ function compartilharPule(codigo) {
 ${numeros.join(', ')}
   `;
 
-  window.open(
-    `https://api.whatsapp.com/send?text=${encodeURIComponent(texto)}`,
-    '_blank'
-  );
+  window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(texto)}`, '_blank');
 }
 
 
