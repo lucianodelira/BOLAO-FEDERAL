@@ -23,7 +23,7 @@
   `;
   body.innerHTML += modalHTML;
 
-  const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwPXlgv795gYZZIXU8oi56a-yd4iQZ_5BGGYpQP_LK9jJFfBEY83uZ8qluXEDJncBjtKA/exec';
+  const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzS32wgwNYZhNQhXQ17OSQUx56NbRuZmrv5l0Hi2cm7k_0WzqZ-BtfQy3BIKzoQZaId/exec';
   const PAYMENT_STORAGE_KEY = 'pixPayment';
   const EXPIRATION_TIME = 15 * 60 * 1000;
 
@@ -208,3 +208,4 @@
     });
   }
 })();
+
