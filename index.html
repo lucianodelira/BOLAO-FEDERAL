@@ -85,6 +85,23 @@ button {
 ul {
   padding-left: 18px;
 }
+
+
+ul {
+  margin-top: 10px;
+}
+
+ul li {
+  background: #1e1e1e;
+  padding: 8px;
+  border-radius: 6px;
+  margin-bottom: 6px;
+  font-size: 14px;
+}
+
+
+
+  
 </style>
 </head>
 
@@ -115,9 +132,15 @@ ul {
   </div>
 
   <div class="card">
-    <h3>👥 Participantes confirmados</h3>
-    <ul id="listaParticipantes"></ul>
-  </div>
+  <h3>👥 Participantes do Bolão</h3>
+
+  <button onclick="toggleParticipantes()" style="margin-bottom:10px">
+    Ver participantes
+  </button>
+
+  <ul id="listaParticipantes" class="hidden"></ul>
+</div>
+
 
   <div class="card">
     <h3>🎯 Palpites</h3>
@@ -226,6 +249,42 @@ function carregarParticipantes() {
       });
     });
 }
+
+
+
+function toggleParticipantes() {
+  const ul = document.getElementById('listaParticipantes');
+
+  if (ul.classList.contains('hidden')) {
+    ul.classList.remove('hidden');
+    carregarParticipantes();
+  } else {
+    ul.classList.add('hidden');
+  }
+}
+
+function carregarParticipantes() {
+  fetch(API_URL + '?action=infoBolao')
+    .then(r => r.json())
+    .then(data => {
+      const ul = document.getElementById('listaParticipantes');
+      ul.innerHTML = '';
+
+      if (!data.participantes || data.participantes.length === 0) {
+        ul.innerHTML = '<li>Nenhum participante confirmado ainda</li>';
+        return;
+      }
+
+      data.participantes.forEach(p => {
+        const li = document.createElement('li');
+        li.textContent = p.nome;
+        ul.appendChild(li);
+      });
+    });
+}
+
+
+  
 </script>
 
 </body>
