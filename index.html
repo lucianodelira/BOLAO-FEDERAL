@@ -258,40 +258,6 @@ if(localStorage.getItem('bolao_nome') && localStorage.getItem('bolao_telefone'))
 
 
 
-function salvarUsuario(nome, telefone) {
-  localStorage.setItem('bolao_nome', nome);
-  localStorage.setItem('bolao_telefone', telefone);
-  nomeCliente = nome;
-  telefoneCliente = telefone;
-}
-
-  nomeCliente = nome.value.trim();
-telefoneCliente = telefone.value.trim();
-
-if (!nomeCliente || !telefoneCliente) {
-  status.innerText = 'Preencha todos os dados';
-  return;
-}
-
-// salva no localStorage
-salvarUsuario(nomeCliente, telefoneCliente);
-
-  window.addEventListener('load', () => {
-  const nome = localStorage.getItem('bolao_nome');
-  const telefone = localStorage.getItem('bolao_telefone');
-
-  if (nome && telefone) {
-    nomeCliente = nome;
-    telefoneCliente = telefone;
-
-    // preenche automaticamente no formulário de login, se quiser
-    document.getElementById('nome').value = nomeCliente;
-    document.getElementById('telefone').value = telefoneCliente;
-
-    // entra direto na sala
-    entrarNaSala(nomeCliente, telefoneCliente);
-  }
-});
 
 
 
