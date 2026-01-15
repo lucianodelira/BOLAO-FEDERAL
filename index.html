@@ -2,30 +2,31 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<title>Sala do Bolão - Loteria Federal</title>
+<title>Bolão Loteria Federal</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
 body {
-  margin: 0;
   font-family: 'Segoe UI', Arial, sans-serif;
   background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
   color: #fff;
+  margin: 0;
 }
 
 .hidden { display: none; }
 
 .container {
   max-width: 380px;
-  margin: 40px auto;
+  margin: auto;
   background: #111;
   padding: 22px;
   border-radius: 14px;
+  box-shadow: 0 0 20px rgba(0,0,0,.6);
 }
 
 h2, h3 {
-  text-align: center;
   margin-top: 0;
+  text-align: center;
 }
 
 input, button {
@@ -49,9 +50,14 @@ button {
   cursor: pointer;
 }
 
+button:disabled {
+  background: #555;
+}
+
 .status {
-  margin-top: 10px;
+  margin-top: 12px;
   text-align: center;
+  font-weight: bold;
 }
 
 .qr img {
@@ -60,17 +66,17 @@ button {
 }
 
 .pixkey {
-  background: #1c1c1c;
-  padding: 8px;
-  border-radius: 6px;
-  margin-top: 6px;
   word-break: break-all;
+  background: #1c1c1c;
+  padding: 10px;
+  border-radius: 6px;
+  margin-top: 8px;
   font-size: 13px;
 }
 
 /* SALA */
 .sala {
-  max-width: 800px;
+  max-width: 700px;
   margin: auto;
   padding: 20px;
 }
@@ -81,27 +87,6 @@ button {
   padding: 16px;
   margin-bottom: 15px;
 }
-
-ul {
-  padding-left: 18px;
-}
-
-
-ul {
-  margin-top: 10px;
-}
-
-ul li {
-  background: #1e1e1e;
-  padding: 8px;
-  border-radius: 6px;
-  margin-bottom: 6px;
-  font-size: 14px;
-}
-
-
-
-  
 </style>
 </head>
 
@@ -117,36 +102,28 @@ ul li {
   <button onclick="gerarPix()">GERAR PIX</button>
 
   <div class="status" id="status"></div>
+
   <div class="qr" id="qr"></div>
 </div>
 
-<!-- SALA -->
+<!-- SALA DO BOLÃO -->
 <div class="sala hidden" id="salaBolao">
-
   <h2>🎉 Sala do Bolão</h2>
 
   <div class="card">
-    <h3>👤 Seus dados</h3>
-    <p><strong>Nome:</strong> <span id="meuNome"></span></p>
-    <p><strong>Telefone:</strong> <span id="meuTelefone"></span></p>
+    <h3>👤 Bem-vindo</h3>
+    <p id="nomeCliente"></p>
   </div>
 
   <div class="card">
-  <h3>👥 Participantes do Bolão</h3>
-
-  <button onclick="toggleParticipantes()" style="margin-bottom:10px">
-    Ver participantes
-  </button>
-
-  <ul id="listaParticipantes" class="hidden"></ul>
-</div>
-
+    <h3>👥 Participantes</h3>
+    <ul id="listaParticipantes"></ul>
+  </div>
 
   <div class="card">
     <h3>🎯 Palpites</h3>
-    <p>(os palpites serão exibidos aqui)</p>
+    <p>(área pronta para seus palpites)</p>
   </div>
-
 </div>
 
 <script>
@@ -155,18 +132,10 @@ const API_URL = 'https://script.google.com/macros/s/AKfycbyyFITAR_NOlCc1zNuML7om
 let paymentId = null;
 let timer = null;
 let nomeCliente = '';
-let telefoneCliente = '';
 
-/* ================= AUTO LOGIN ================= */
-const auth = JSON.parse(localStorage.getItem('bolao_auth'));
-if (auth && auth.expires > Date.now()) {
-  entrarNaSala(auth.nome, auth.telefone);
-}
-
-/* ================= PIX ================= */
 function gerarPix() {
   nomeCliente = nome.value.trim();
-  telefoneCliente = telefone.value.trim();
+  const telefoneCliente = telefone.value.trim();
 
   if (!nomeCliente || !telefoneCliente) {
     status.innerText = 'Preencha todos os dados';
@@ -199,6 +168,9 @@ function gerarPix() {
 
     status.innerText = '⏳ Aguardando pagamento...';
     timer = setInterval(verificarPagamento, 5000);
+  })
+  .catch(() => {
+    status.innerText = 'Erro de conexão com o servidor';
   });
 }
 
@@ -207,60 +179,25 @@ function verificarPagamento() {
     method: 'POST',
     body: JSON.stringify({
       action: 'checkPayment',
-      paymentId
+      paymentId: paymentId
     })
   })
   .then(r => r.json())
   .then(data => {
     if (data.status === 'PAID') {
       clearInterval(timer);
-
-      localStorage.setItem('bolao_auth', JSON.stringify({
-        nome: nomeCliente,
-        telefone: telefoneCliente,
-        expires: Date.now() + (24 * 60 * 60 * 1000) // 24 horas
-      }));
-
-      entrarNaSala(nomeCliente, telefoneCliente);
+      status.innerText = '✅ Pagamento aprovado!';
+      entrarNaSala();
     }
   });
 }
 
-/* ================= SALA ================= */
-function entrarNaSala(nome, telefone) {
-  loginArea.classList.add('hidden');
-  salaBolao.classList.remove('hidden');
-
-  meuNome.innerText = nome;
-  meuTelefone.innerText = telefone;
+function entrarNaSala() {
+  document.getElementById('loginArea').classList.add('hidden');
+  document.getElementById('salaBolao').classList.remove('hidden');
+  document.getElementById('nomeCliente').innerText = nomeCliente;
 
   carregarParticipantes();
-}
-
-function carregarParticipantes() {
-  fetch(API_URL + '?action=infoBolao')
-    .then(r => r.json())
-    .then(data => {
-      listaParticipantes.innerHTML = '';
-      data.participantes.forEach(p => {
-        const li = document.createElement('li');
-        li.textContent = p.nome;
-        listaParticipantes.appendChild(li);
-      });
-    });
-}
-
-
-
-function toggleParticipantes() {
-  const ul = document.getElementById('listaParticipantes');
-
-  if (ul.classList.contains('hidden')) {
-    ul.classList.remove('hidden');
-    carregarParticipantes();
-  } else {
-    ul.classList.add('hidden');
-  }
 }
 
 function carregarParticipantes() {
@@ -270,21 +207,13 @@ function carregarParticipantes() {
       const ul = document.getElementById('listaParticipantes');
       ul.innerHTML = '';
 
-      if (!data.participantes || data.participantes.length === 0) {
-        ul.innerHTML = '<li>Nenhum participante confirmado ainda</li>';
-        return;
-      }
-
       data.participantes.forEach(p => {
         const li = document.createElement('li');
-        li.textContent = p.nome;
+        li.textContent = `${p.nome} - ${p.telefone}`;
         ul.appendChild(li);
       });
     });
 }
-
-
-  
 </script>
 
 </body>
