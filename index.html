@@ -36,6 +36,20 @@ li { padding:6px; border-bottom:1px solid #ddd }
 <button onclick="participar()">Participar do Bolão</button>
 <p id="statusMsg"></p>
 </div>
+<div class="card hidden" id="pixArea">
+  <h3>💳 Pague o PIX para entrar no Bolão</h3>
+
+  <img id="pixQr" style="width:220px; display:block; margin:auto">
+
+  <p>Código PIX (copie e cole):</p>
+  <input id="pixCopia" readonly>
+
+  <button onclick="copiarPix()">Copiar código PIX</button>
+
+  <p id="pixStatus" style="margin-top:10px;color:#0b5ed7">
+    Aguardando pagamento...
+  </p>
+</div>
 
 <div class="card">
 <h3>Status do Bolão</h3>
