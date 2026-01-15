@@ -12,14 +12,14 @@ function participar() {
   }
 
   fetch(API_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      action: 'createPayment',
-      nome,
-      telefone
-    })
+  method: 'POST',
+  body: JSON.stringify({
+    action: 'createPayment',
+    nome,
+    telefone
   })
+})
+    
   .then(r => r.json())
   .then(d => {
     if (!d.success) {
@@ -43,7 +43,7 @@ function verificarPagamento() {
   const timer = setInterval(() => {
     fetch(API_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      
       body: JSON.stringify({
         action: 'checkPayment',
         paymentId
