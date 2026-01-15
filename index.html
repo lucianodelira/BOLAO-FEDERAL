@@ -1,61 +1,54 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <title>Bolão Loteria Federal</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta charset="UTF-8">
+<title>Bolão Loteria Federal</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <style>
-    body { font-family: Arial, sans-serif; background:#f4f4f4; margin:0 }
-    header { background:#1d3557; color:#fff; padding:15px; text-align:center }
-    .container { padding:20px; max-width:900px; margin:auto }
-    .card { background:#fff; padding:20px; border-radius:10px; margin-bottom:20px }
-    input, button { padding:10px; width:100%; margin-top:10px }
-    button { background:#1d3557; color:#fff; border:none; border-radius:6px; cursor:pointer }
-    .stats { display:flex; gap:10px }
-    .stats div { flex:1; background:#e9ecef; padding:10px; border-radius:8px; text-align:center }
-    ul { list-style:none; padding:0 }
-    li { padding:6px 0; border-bottom:1px solid #ddd }
-    .hidden { display:none }
-  </style>
+<style>
+body { font-family: Arial; background:#f4f4f4; margin:0 }
+header { background:#1d3557; color:#fff; padding:15px; text-align:center }
+.container { max-width:900px; margin:auto; padding:20px }
+.card { background:#fff; padding:20px; border-radius:10px; margin-bottom:20px }
+input, button { width:100%; padding:10px; margin-top:10px }
+button { background:#1d3557; color:#fff; border:none; border-radius:6px }
+.hidden { display:none }
+.stats { display:flex; gap:10px }
+.stats div { flex:1; background:#e9ecef; padding:10px; border-radius:8px; text-align:center }
+</style>
 </head>
 
 <body>
 
 <header>
-  <h1>🎟️ Bolão da Loteria Federal</h1>
-  <p>Valor da cota: R$ 18,00 | Total: 200 cotas</p>
+<h1>🎟️ Bolão da Loteria Federal</h1>
+<p>Valor da cota: R$ 18,00 | Total: 200 cotas</p>
 </header>
 
 <div class="container">
 
-  <div class="card" id="registerCard">
-    <h2>Entrar no Bolão</h2>
-    <input id="name" placeholder="Seu nome completo">
-    <input id="phone" placeholder="Telefone (WhatsApp)">
-    <button onclick="startPayment()">Gerar PIX</button>
-  </div>
+<div class="card">
+<h3>Entrar no Bolão</h3>
+<input id="name" placeholder="Nome completo">
+<input id="phone" placeholder="Telefone (WhatsApp)">
+<button id="btnPix" onclick="startPayment()">Gerar PIX</button>
+</div>
 
-  <div class="card hidden" id="pixArea">
-    <h3>Pagamento PIX</h3>
-    <img id="pixQr" width="220"><br><br>
-    <input id="pixCopia" readonly>
-    <p id="pixStatus">Aguardando pagamento...</p>
-  </div>
+<div class="card hidden" id="pixArea">
+<h3>Pagamento PIX</h3>
+<img id="pixQr" width="220"><br><br>
+<input id="pixCopia" readonly>
+<p id="pixStatus">Aguardando pagamento...</p>
+</div>
 
-  <div class="card">
-    <h3>Status do Bolão</h3>
-    <div class="stats">
-      <div><strong id="freeCotas">200</strong><br>Disponíveis</div>
-      <div><strong id="usedCotas">0</strong><br>Ocupadas</div>
-      <div><strong>200</strong><br>Total</div>
-    </div>
-  </div>
-
-  <div class="card">
-    <h3>👥 Participantes</h3>
-    <ul id="participantsList"></ul>
-  </div>
+<div class="card">
+<h3>Status do Bolão</h3>
+<div class="stats">
+<div><strong id="freeCotas">200</strong><br>Disponíveis</div>
+<div><strong id="usedCotas">0</strong><br>Ocupadas</div>
+<div><strong>200</strong><br>Total</div>
+</div>
+</div>
 
 </div>
 
@@ -64,32 +57,50 @@ const API_URL = 'https://script.google.com/macros/s/AKfycbyyFITAR_NOlCc1zNuML7om
 let paymentId = null;
 
 function startPayment() {
-  const nome = name.value.trim();
-  const telefone = phone.value.trim();
+  const btn = document.getElementById('btnPix');
+  btn.disabled = true;
+  btn.innerText = 'Gerando PIX...';
+
+  const nome = document.getElementById('name').value.trim();
+  const telefone = document.getElementById('phone').value.trim();
+
   if (!nome || !telefone) {
     alert('Preencha nome e telefone');
+    btn.disabled = false;
+    btn.innerText = 'Gerar PIX';
     return;
   }
 
   fetch(API_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
     body: JSON.stringify({ action:'createPayment', nome, telefone })
   })
   .then(r => r.json())
   .then(d => {
-    if (!d.success) return alert(d.message);
+    if (!d.success) {
+      alert(d.message);
+      btn.disabled = false;
+      btn.innerText = 'Gerar PIX';
+      return;
+    }
+
     paymentId = d.paymentId;
     pixQr.src = 'data:image/png;base64,' + d.qrCodeBase64;
     pixCopia.value = d.pixKey;
     pixArea.classList.remove('hidden');
+    btn.innerText = 'PIX Gerado';
     checkPayment();
   })
-  .catch(() => alert('Erro de conexão com o servidor'));
+  .catch(() => {
+    alert('Erro de conexão com o servidor');
+    btn.disabled = false;
+    btn.innerText = 'Gerar PIX';
+  });
 }
 
 function checkPayment() {
-  const t = setInterval(() => {
+  const timer = setInterval(() => {
     fetch(API_URL, {
       method:'POST',
       headers:{'Content-Type':'application/json'},
@@ -98,30 +109,12 @@ function checkPayment() {
     .then(r => r.json())
     .then(d => {
       if (d.status === 'PAID') {
-        clearInterval(t);
+        clearInterval(timer);
         pixStatus.innerText = 'Pagamento confirmado 🎉';
-        loadBolao();
       }
     });
   }, 5000);
 }
-
-function loadBolao() {
-  fetch(API_URL + '?action=infoBolao')
-    .then(r => r.json())
-    .then(d => {
-      usedCotas.innerText = d.ocupadas;
-      freeCotas.innerText = d.total - d.ocupadas;
-      participantsList.innerHTML = '';
-      d.participantes.forEach(p => {
-        const li = document.createElement('li');
-        li.textContent = `${p.nome} - ${p.telefone}`;
-        participantsList.appendChild(li);
-      });
-    });
-}
-
-loadBolao();
 </script>
 
 </body>
