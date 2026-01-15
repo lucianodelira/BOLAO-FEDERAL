@@ -142,9 +142,10 @@ ul li {
 </div>
 
 
- <h3>🎯 Palpites</h3>
-<button onclick="togglePalpites()" style="margin-bottom:10px">Ver Palpites</button>
-<ul id="listaPalpites" class="hidden"></ul>
+<h3>🎯 Palpites</h3>
+<button onclick="togglePule()" style="margin-bottom:10px">Ver Pule</button>
+<div id="puleContainer" class="hidden" style="display:grid; grid-template-columns: 1fr 1fr; gap: 10px;"></div>
+
 
 
 </div>
@@ -301,49 +302,63 @@ function carregarParticipantes() {
 
 
 
-function togglePalpites() {
-  const ul = document.getElementById('listaPalpites');
-  if (ul.classList.contains('hidden')) {
-    ul.classList.remove('hidden');
-    carregarPalpites();
+
+
+
+
+function togglePule() {
+  const div = document.getElementById('puleContainer');
+  if (div.classList.contains('hidden')) {
+    div.classList.remove('hidden');
+    carregarPule();
   } else {
-    ul.classList.add('hidden');
+    div.classList.add('hidden');
   }
 }
 
-function carregarPalpites() {
-  fetch(API_URL + '?action=getPalpites')
+function carregarPule() {
+  fetch(API_URL + '?action=getPule')
     .then(r => r.json())
     .then(data => {
-      const ul = document.getElementById('listaPalpites');
-      ul.innerHTML = '';
-      data.palpites.forEach(p => {
-        const li = document.createElement('li');
-        li.innerHTML = `
-          Número: ${p.numero} 
-          <button onclick="compartilhar('${p.numero}')">Compartilhar</button>
+      const div = document.getElementById('puleContainer');
+      div.innerHTML = '';
+
+      const participante = { nome: nomeCliente, telefone: telefoneCliente, id: idParticipante() };
+      const numeros = data.numeros;
+
+      numeros.forEach(numero => {
+        const cell = document.createElement('div');
+        cell.style.background = '#1e1e1e';
+        cell.style.padding = '8px';
+        cell.style.borderRadius = '6px';
+        cell.style.fontSize = '14px';
+        cell.innerHTML = `
+          <strong>${participante.nome}</strong><br>
+          ${participante.telefone}<br>
+          ID: ${participante.id}<br>
+          Nº: ${numero}<br>
+          <button onclick="compartilharPule('${numero}')">Compartilhar</button>
         `;
-        ul.appendChild(li);
+        div.appendChild(cell);
       });
     });
 }
 
-function compartilhar(numero) {
-  // registra compartilhamento na planilha
+function compartilharPule(numero) {
+  const participante = { nome: nomeCliente, telefone: telefoneCliente, id: idParticipante() };
   fetch(API_URL, {
     method: 'POST',
     body: JSON.stringify({
-      action: 'compartilharPalpite',
-      nome: nomeCliente,
-      telefone: telefoneCliente,
-      id: idParticipante(), // função abaixo pega coluna F
+      action: 'compartilharPule',
+      nome: participante.nome,
+      telefone: participante.telefone,
+      id: participante.id,
       numeros: [numero]
     })
   }).then(r => r.json())
     .then(data => {
       if (data.success) {
-        // abre WhatsApp com o texto do palpite
-        const texto = `Meu palpite: ${numero}`;
+        const texto = `Meu palpite: ${numero}\nNome: ${participante.nome}\nTelefone: ${participante.telefone}\nID: ${participante.id}`;
         window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(texto)}`, '_blank');
       } else {
         alert('Erro ao compartilhar: ' + data.message);
@@ -351,13 +366,10 @@ function compartilhar(numero) {
     });
 }
 
-// função para buscar ID do participante (coluna F)
+// pega ID do participante (coluna F)
 function idParticipante() {
-  return parseInt(localStorage.getItem('bolao_id') || 0); // você pode salvar no login
+  return parseInt(localStorage.getItem('bolao_id') || 0);
 }
-
-
-
 
 
   
