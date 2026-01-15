@@ -6,35 +6,49 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
+* { box-sizing: border-box; }
+
 body {
-  font-family: Arial, sans-serif;
-  background: #0d0d0d;
+  font-family: 'Segoe UI', Arial, sans-serif;
+  background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
   color: #fff;
+  min-height: 100vh;
+  margin: 0;
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 100vh;
 }
 
-.container {
-  background: #1c1c1c;
-  padding: 20px;
-  border-radius: 10px;
+.card {
+  background: #111;
   width: 100%;
-  max-width: 360px;
+  max-width: 380px;
+  padding: 25px;
+  border-radius: 14px;
+  box-shadow: 0 10px 40px rgba(0,0,0,.6);
   text-align: center;
+}
+
+h2 {
+  margin-bottom: 15px;
 }
 
 input, button {
   width: 100%;
   padding: 12px;
   margin-top: 10px;
-  border-radius: 5px;
+  border-radius: 8px;
   border: none;
+  font-size: 15px;
+}
+
+input {
+  background: #222;
+  color: #fff;
 }
 
 button {
-  background: #00c853;
+  background: #00e676;
   color: #000;
   font-weight: bold;
   cursor: pointer;
@@ -42,31 +56,75 @@ button {
 
 button:disabled {
   background: #555;
+  cursor: not-allowed;
 }
 
-#qr {
-  margin-top: 15px;
-}
-
-img {
+#qr img {
   width: 220px;
+  margin: 15px auto;
+}
+
+.status {
+  margin-top: 10px;
+  font-weight: bold;
+}
+
+.hidden {
+  display: none;
+}
+
+/* SALA */
+.sala {
+  text-align: left;
+}
+
+.sala h3 {
+  margin-top: 0;
+}
+
+.lista {
+  background: #1e1e1e;
+  border-radius: 8px;
+  padding: 10px;
+  margin-top: 10px;
+  max-height: 180px;
+  overflow-y: auto;
+}
+
+.lista div {
+  padding: 6px;
+  border-bottom: 1px solid #333;
 }
 </style>
 </head>
 
 <body>
 
-<div class="container">
-  <h2>Bolão Loteria Federal</h2>
+<!-- TELA PAGAMENTO -->
+<div class="card" id="telaPagamento">
+  <h2>🎟️ Bolão Loteria Federal</h2>
 
-  <input id="nome" placeholder="Seu nome">
+  <input id="nome" placeholder="Seu nome completo">
   <input id="telefone" placeholder="Telefone / WhatsApp">
 
   <button onclick="gerarPix()">GERAR PIX</button>
 
-  <div id="status"></div>
-
+  <div class="status" id="status"></div>
   <div id="qr"></div>
+</div>
+
+<!-- SALA -->
+<div class="card hidden sala" id="telaSala">
+  <h3>👋 Bem-vindo, <span id="nomeUsuario"></span></h3>
+  <p>Você está oficialmente no bolão!</p>
+
+  <h4>👥 Participantes</h4>
+  <div class="lista" id="listaParticipantes"></div>
+
+  <h4 style="margin-top:15px">🎯 Seus palpites</h4>
+  <p style="font-size:13px;color:#ccc">
+    (área pronta para você adicionar os palpites depois)
+  </p>
 </div>
 
 <script>
@@ -74,61 +132,89 @@ const API_URL = 'https://script.google.com/macros/s/AKfycbyyFITAR_NOlCc1zNuML7om
 
 let paymentId = null;
 let timer = null;
+let nomeCliente = '';
 
 function gerarPix() {
-  document.getElementById('status').innerText = 'Gerando PIX...';
+  nomeCliente = nome.value.trim();
+  const tel = telefone.value.trim();
+
+  if (!nomeCliente || !tel) {
+    status.innerText = 'Preencha nome e telefone';
+    return;
+  }
+
+  status.innerText = '⏳ Gerando PIX...';
 
   fetch(API_URL, {
     method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       action: 'createPayment',
-      nome: document.getElementById('nome').value,
-      telefone: document.getElementById('telefone').value
+      nome: nomeCliente,
+      telefone: tel
     })
   })
   .then(r => r.json())
   .then(data => {
     if (!data.success) {
-      document.getElementById('status').innerText = data.message;
+      status.innerText = data.message;
       return;
     }
 
     paymentId = data.paymentId;
 
-    document.getElementById('qr').innerHTML = `
+    qr.innerHTML = `
       <img src="data:image/png;base64,${data.qrCodeBase64}">
-      <p>${data.pixKey}</p>
+      <p style="font-size:12px;word-break:break-all">${data.pixKey}</p>
     `;
 
-    document.getElementById('status').innerText = 'Aguardando pagamento...';
+    status.innerText = '💳 Aguardando pagamento...';
     timer = setInterval(verificarPagamento, 5000);
   })
-  .catch(err => {
-    console.error(err);
-    document.getElementById('status').innerText = 'Erro de conexão com o servidor';
+  .catch(() => {
+    status.innerText = 'Erro de conexão com o servidor';
   });
 }
 
 function verificarPagamento() {
   fetch(API_URL, {
     method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       action: 'checkPayment',
-      paymentId: paymentId
+      paymentId
     })
   })
   .then(r => r.json())
   .then(data => {
- if (d.status === 'PAID') {
-    clearInterval(t);
+    if (data.status === 'PAID') {
+      clearInterval(timer);
+      entrarNaSala();
+    }
+  });
+}
 
-    pixStatus.innerText = '✅ Pagamento aprovado!';
-    
-    loadBolao(); // <<< AQUI É O PONTO CERTO
-  }
-});
+function entrarNaSala() {
+  telaPagamento.classList.add('hidden');
+  telaSala.classList.remove('hidden');
+  nomeUsuario.innerText = nomeCliente;
+  carregarParticipantes();
+}
+
+function carregarParticipantes() {
+  fetch(API_URL + '?action=infoBolao')
+    .then(r => r.json())
+    .then(data => {
+      listaParticipantes.innerHTML = '';
+      data.participantes.forEach(p => {
+        const div = document.createElement('div');
+        div.innerText = `${p.nome} - ${p.telefone}`;
+        listaParticipantes.appendChild(div);
+      });
+    });
+}
 </script>
-
 
 </body>
 </html>
+
