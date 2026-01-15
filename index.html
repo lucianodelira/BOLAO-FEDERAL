@@ -254,299 +254,63 @@ function carregarParticipantes() {
 
 
 
-function toggleParticipantes() {
-  const ul = document.getElementById('listaParticipantes');
-
-  if (ul.classList.contains('hidden')) {
-    ul.classList.remove('hidden');
-    carregarParticipantes();
-  } else {
-    ul.classList.add('hidden');
-  }
+function toggleParticipantes(){
+  const ul=document.getElementById('listaParticipantes');
+  ul.classList.toggle('hidden');
 }
 
-function carregarParticipantes() {
-  fetch(API_URL + '?action=infoBolao')
-    .then(r => r.json())
-    .then(data => {
-      const ul = document.getElementById('listaParticipantes');
-      ul.innerHTML = '';
-
-      if (!data.participantes || data.participantes.length === 0) {
-        ul.innerHTML = '<li>Nenhum participante confirmado ainda</li>';
-        return;
-      }
-
-      data.participantes.forEach(p => {
-        const li = document.createElement('li');
-        li.textContent = p.nome;
-        ul.appendChild(li);
-      });
-    });
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function gerarPule() {
-  const div = document.getElementById('puleContainer');
-  div.classList.remove('hidden');
-  div.innerHTML = 'Carregando pule...';
-
+function gerarPule(){
+  const div=document.getElementById('puleContainer');
+  div.classList.remove('hidden'); div.innerHTML='Carregando...';
   fetch(`${API_URL}?action=getPule&nome=${encodeURIComponent(nomeCliente)}&telefone=${encodeURIComponent(telefoneCliente)}`)
-    .then(r => r.json())
-    .then(data => {
-      div.innerHTML = '';
-      if (!data.success) {
-        div.innerHTML = `<p>${data.message}</p>`;
-        return;
-      }
+  .then(r=>r.json())
+  .then(data=>{
+    div.innerHTML='';
+    if(!data.success){div.innerHTML=`<p>${data.message}</p>`; return;}
+    const { participante, numeros } = data;
 
-      const { participante, numeros } = data;
+    // Cartão do participante
+    const card=document.createElement('div');
+    card.style.background='#1e1e1e'; card.style.padding='8px'; card.style.borderRadius='6px'; card.style.gridColumn='1 / -1';
+    card.innerHTML = `<strong>${participante.nome}</strong><br>${participante.telefone}<br>ID: ${participante.id}<br><br>
+      <button onclick="compartilharPule()">Compartilhar Tudo no WhatsApp</button>`;
+    div.appendChild(card);
 
-      // Cria cartão do participante
-      const card = document.createElement('div');
-      card.style.background = '#1e1e1e';
-      card.style.padding = '8px';
-      card.style.borderRadius = '6px';
-      card.style.gridColumn = '1 / -1'; // ocupa duas colunas
-      card.innerHTML = `
-        <strong>${participante.nome}</strong><br>
-        ${participante.telefone}<br>
-        ID: ${participante.id}<br><br>
-        <button onclick="compartilharPule()">Compartilhar Tudo no WhatsApp</button>
-      `;
-      div.appendChild(card);
-
-      // Lista os números em células
-      numeros.forEach(numero => {
-        const cell = document.createElement('div');
-        cell.style.background = '#1e1e1e';
-        cell.style.padding = '6px';
-        cell.style.borderRadius = '4px';
-        cell.style.fontSize = '14px';
-        cell.textContent = numero;
-        div.appendChild(cell);
-      });
+    // Números
+    numeros.forEach(n=>{
+      const cell=document.createElement('div');
+      cell.style.background='#1e1e1e'; cell.style.padding='6px'; cell.style.borderRadius='4px'; cell.style.fontSize='14px';
+      cell.textContent = n;
+      div.appendChild(cell);
     });
+  });
 }
 
-function compartilharPule() {
-  fetch(API_URL, {
-    method: 'POST',
-    body: JSON.stringify({
-      action: 'compartilharPule',
-      nome: nomeCliente,
-      telefone: telefoneCliente,
-      id: idParticipante(),
-      numeros: [] // Aqui podemos enviar todos os números se quiser salvar
+function compartilharPule(){
+  fetch(API_URL,{
+    method:'POST',
+    body:JSON.stringify({
+      action:'compartilharPule',
+      nome:nomeCliente,
+      telefone:telefoneCliente,
+      id:0, // opcional, pode ser 0 se não armazenou localmente
+      numeros:Array.from(document.querySelectorAll('#puleContainer > div:not(:first-child)')).map(d=>d.textContent)
     })
-  }).then(r => r.json())
-    .then(data => {
-      if (data.success) {
-        alert('Pule compartilhada e salva!');
-        // abre WhatsApp com todos os números
-        const texto = `Minha pule:\nNome: ${nomeCliente}\nTelefone: ${telefoneCliente}\nID: ${idParticipante()}\nNúmeros: ${Array.from(document.querySelectorAll('#puleContainer > div:not(:first-child)')).map(d => d.textContent).join(', ')}`;
-        window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(texto)}`, '_blank');
-      } else {
-        alert('Erro ao compartilhar: ' + data.message);
-      }
+  }).then(r=>r.json())
+    .then(data=>{
+      if(data.success){
+        const texto=`Minha pule:\nNome: ${nomeCliente}\nTelefone: ${telefoneCliente}\nNúmeros: ${Array.from(document.querySelectorAll('#puleContainer > div:not(:first-child)')).map(d=>d.textContent).join(', ')}`;
+        window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(texto)}`,'_blank');
+      } else { alert('Erro ao compartilhar: '+data.message); }
     });
 }
 
-function idParticipante() {
-  return parseInt(localStorage.getItem('bolao_id') || 0);
+// Auto login
+if(localStorage.getItem('bolao_nome') && localStorage.getItem('bolao_telefone')){
+  nomeCliente=localStorage.getItem('bolao_nome');
+  telefoneCliente=localStorage.getItem('bolao_telefone');
+  abrirSala();
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function entrarNaSala(nome, telefone) {
-  loginArea.classList.add('hidden');
-  salaBolao.classList.remove('hidden');
-
-  meuNome.innerText = nome;
-  meuTelefone.innerText = telefone;
-
-  // Busca participante ativo e salva ID
-  fetch(`${API_URL}?action=getPule&nome=${encodeURIComponent(nome)}&telefone=${encodeURIComponent(telefone)}`)
-    .then(r => r.json())
-    .then(data => {
-      if (data.success) {
-        localStorage.setItem('bolao_id', data.participante.id);
-      } else {
-        console.error('Participante não encontrado ou inativo');
-      }
-    });
-
-  carregarParticipantes();
-}
-
-
-  function gerarPule() {
-  const div = document.getElementById('puleContainer');
-  div.classList.remove('hidden');
-  div.innerHTML = 'Carregando pule...';
-
-  fetch(`${API_URL}?action=getPule&nome=${encodeURIComponent(nomeCliente)}&telefone=${encodeURIComponent(telefoneCliente)}`)
-    .then(r => r.json())
-    .then(data => {
-      div.innerHTML = '';
-      if (!data.success) {
-        div.innerHTML = `<p>${data.message}</p>`;
-        return;
-      }
-
-      const { participante, numeros } = data;
-
-      // Cartão do participante
-      const card = document.createElement('div');
-      card.style.background = '#1e1e1e';
-      card.style.padding = '8px';
-      card.style.borderRadius = '6px';
-      card.style.gridColumn = '1 / -1';
-      card.innerHTML = `
-        <strong>${participante.nome}</strong><br>
-        ${participante.telefone}<br>
-        ID: ${participante.id}<br><br>
-        <button onclick="compartilharPule()">Compartilhar Tudo no WhatsApp</button>
-      `;
-      div.appendChild(card);
-
-      // Lista todos os números da aba PALPITES
-      numeros.forEach(numero => {
-        const cell = document.createElement('div');
-        cell.style.background = '#1e1e1e';
-        cell.style.padding = '6px';
-        cell.style.borderRadius = '4px';
-        cell.style.fontSize = '14px';
-        cell.textContent = numero;
-        div.appendChild(cell);
-      });
-    });
-}
-
-
-
-function compartilharPule() {
-  const numeros = Array.from(document.querySelectorAll('#puleContainer > div:not(:first-child)'))
-                       .map(d => d.textContent);
-
-  fetch(API_URL, {
-    method: 'POST',
-    body: JSON.stringify({
-      action: 'compartilharPule',
-      nome: nomeCliente,
-      telefone: telefoneCliente,
-      id: idParticipante(),
-      numeros: numeros // envia todos os números para salvar na planilha
-    })
-  }).then(r => r.json())
-    .then(data => {
-      if (data.success) {
-        const texto = `Minha pule:\nNome: ${nomeCliente}\nTelefone: ${telefoneCliente}\nID: ${idParticipante()}\nNúmeros: ${numeros.join(', ')}`;
-        window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(texto)}`, '_blank');
-      } else {
-        alert('Erro ao compartilhar: ' + data.message);
-      }
-    });
-}
-
-
-
-  
-
-
-
-
-
-
-
-
-
-
-  
 </script>
 
 </body>
