@@ -71,8 +71,13 @@ if (auth && auth.expires > Date.now()) {
 
 /* ================= PIX ================= */
 function gerarPix() {
-  nomeCliente = nome.value.trim();
-  telefoneCliente = telefone.value.trim();
+  const nomeInput = document.getElementById('nome');
+  const telefoneInput = document.getElementById('telefone');
+  const status = document.getElementById('status');
+  const qr = document.getElementById('qr');
+
+  nomeCliente = nomeInput.value.trim();
+  telefoneCliente = telefoneInput.value.trim();
 
   if (!nomeCliente || !telefoneCliente) {
     status.innerText = 'Preencha todos os dados';
@@ -105,10 +110,15 @@ function gerarPix() {
 
     status.innerText = '⏳ Aguardando pagamento...';
     timer = setInterval(verificarPagamento, 5000);
+  })
+  .catch(err => {
+    status.innerText = 'Erro ao conectar com o servidor: ' + err.message;
   });
 }
 
 function verificarPagamento() {
+  const status = document.getElementById('status');
+
   fetch(API_URL, {
     method: 'POST',
     body: JSON.stringify({
@@ -129,16 +139,19 @@ function verificarPagamento() {
 
       entrarNaSala(nomeCliente, telefoneCliente);
     }
+  })
+  .catch(err => {
+    status.innerText = 'Erro ao verificar pagamento: ' + err.message;
   });
 }
 
 /* ================= SALA ================= */
 function entrarNaSala(nome, telefone) {
-  loginArea.classList.add('hidden');
-  salaBolao.classList.remove('hidden');
+  document.getElementById('loginArea').classList.add('hidden');
+  document.getElementById('salaBolao').classList.remove('hidden');
 
-  meuNome.innerText = nome;
-  meuTelefone.innerText = telefone;
+  document.getElementById('meuNome').innerText = nome;
+  document.getElementById('meuTelefone').innerText = telefone;
 
   carregarParticipantes();
 }
@@ -147,13 +160,15 @@ function carregarParticipantes() {
   fetch(API_URL + '?action=infoBolao')
     .then(r => r.json())
     .then(data => {
-      listaParticipantes.innerHTML = '';
+      const lista = document.getElementById('listaParticipantes');
+      lista.innerHTML = '';
       data.participantes.forEach(p => {
         const li = document.createElement('li');
         li.textContent = p.nome;
-        listaParticipantes.appendChild(li);
+        lista.appendChild(li);
       });
-    });
+    })
+    .catch(err => console.error('Erro ao carregar participantes:', err));
 }
 
 function toggleParticipantes(){
@@ -204,10 +219,11 @@ function gerarPule() {
       btn.style.marginTop = '8px';
       btn.onclick = () => compartilharPule(codigo, numeros);
       card.appendChild(btn);
+    })
+    .catch(err => {
+      div.innerHTML = `<p>Erro ao gerar pule: ${err.message}</p>`;
     });
 }
-
-
 
 /* ================= COMPARTILHAR ================= */
 function compartilharPule(codigo, numeros) {
@@ -222,47 +238,6 @@ ${numeros.join(', ')}
 
   window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(texto)}`, '_blank');
 }
-
-
-// Auto login pelo localStorage
-if(localStorage.getItem('bolao_nome') && localStorage.getItem('bolao_telefone')){
-  nomeCliente = localStorage.getItem('bolao_nome');
-  telefoneCliente = localStorage.getItem('bolao_telefone');
-  entrarNaSala(nomeCliente, telefoneCliente);
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  
 </script>
 
 </body>
