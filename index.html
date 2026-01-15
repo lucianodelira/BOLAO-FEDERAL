@@ -4,80 +4,105 @@
 <meta charset="UTF-8">
 <title>Sala do Bolão - Loteria Federal</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <style>
-body { margin:0; font-family:'Segoe UI', Arial, sans-serif; background: linear-gradient(135deg,#0f2027,#203a43,#2c5364); color:#fff; }
-.hidden { display:none; }
-.container { max-width:380px; margin:40px auto; background:#111; padding:22px; border-radius:14px; }
-h2,h3 { text-align:center; margin-top:0; }
-input, button { width:100%; padding:12px; margin-top:10px; border-radius:8px; border:none; font-size:15px; }
-input { background:#1e1e1e; color:#fff; }
-button { background:#00e676; color:#000; font-weight:bold; cursor:pointer; }
-.status { margin-top:10px; text-align:center; }
-.qr img { width:220px; margin-top:10px; }
-.pixkey { background:#1c1c1c; padding:8px; border-radius:6px; margin-top:6px; word-break:break-all; font-size:13px; }
-.sala { max-width:800px; margin:auto; padding:20px; }
-.card { background:#121212; border-radius:12px; padding:16px; margin-bottom:15px; }
-ul { padding-left:18px; margin-top:10px; }
-ul li { background:#1e1e1e; padding:8px; border-radius:6px; margin-bottom:6px; font-size:14px; }
-#puleContainer { display:grid; grid-template-columns: 1fr 1fr; gap:10px; }
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: linear-gradient(135deg,#0f2027,#203a43,#2c5364);
+  color: #fff;
+}
+.hidden { display: none; }
+.container {
+  max-width: 380px;
+  margin: 40px auto;
+  background: #111;
+  padding: 22px;
+  border-radius: 14px;
+}
+input, button {
+  width: 100%;
+  padding: 12px;
+  margin-top: 10px;
+  border-radius: 8px;
+  border: none;
+}
+input { background: #1e1e1e; color: #fff; }
+button { background: #00e676; font-weight: bold; cursor: pointer; }
+.card {
+  background:#121212;
+  padding:16px;
+  border-radius:12px;
+  margin-bottom:15px;
+}
+ul li {
+  background:#1e1e1e;
+  padding:8px;
+  border-radius:6px;
+  margin-bottom:6px;
+}
 </style>
 </head>
+
 <body>
 
-<!-- LOGIN / PIX -->
 <div class="container" id="loginArea">
   <h2>🎟️ Bolão Loteria Federal</h2>
   <input id="nome" placeholder="Seu nome completo">
   <input id="telefone" placeholder="Telefone / WhatsApp">
   <button onclick="gerarPix()">GERAR PIX</button>
-  <div class="status" id="status"></div>
-  <div class="qr" id="qr"></div>
+  <div id="status"></div>
+  <div id="qr"></div>
 </div>
 
-<!-- SALA -->
-<div class="sala hidden" id="salaBolao">
+<div class="container hidden" id="salaBolao">
   <h2>🎉 Sala do Bolão</h2>
 
   <div class="card">
-    <h3>👤 Seus dados</h3>
-    <p><strong>Nome:</strong> <span id="meuNome"></span></p>
-    <p><strong>Telefone:</strong> <span id="meuTelefone"></span></p>
+    <strong>👤 Nome:</strong> <span id="meuNome"></span><br>
+    <strong>📞 Telefone:</strong> <span id="meuTelefone"></span>
   </div>
 
   <div class="card">
-    <h3>👥 Participantes do Bolão</h3>
-    <button onclick="toggleParticipantes()" style="margin-bottom:10px">Ver participantes</button>
+    <button onclick="toggleParticipantes()">Ver participantes</button>
     <ul id="listaParticipantes" class="hidden"></ul>
   </div>
 
-  <h3>🎯 Pule do Bolão</h3>
-  <button onclick="gerarPule()" style="margin-bottom:10px">Gerar Pule</button>
-  <div id="puleContainer" class="hidden"></div>
+  <button onclick="gerarPule()">🎯 Gerar Pule</button>
+  <div id="puleContainer"></div>
 </div>
 
 <script>
-const API_URL = 'https://script.google.com/macros/s/AKfycbyyFITAR_NOlCc1zNuML7omJrSZje84pWC9e5zu0-5DNxnmoVcSkHyYzHJujcfC_VzZ/exec';
+const API_URL = 'COLE_AQUI_A_URL_DO_WEB_APP';
 
-let paymentId = null;
-let timer = null;
 let nomeCliente = '';
 let telefoneCliente = '';
+let paymentId = null;
+let timer = null;
 
-/* ================= AUTO LOGIN ================= */
-const auth = JSON.parse(localStorage.getItem('bolao_auth'));
-if (auth && auth.expires > Date.now()) {
-  entrarNaSala(auth.nome, auth.telefone);
-}
+/* ========= AUTO LOGIN ========= */
+window.onload = () => {
+  const nome = localStorage.getItem('bolao_nome');
+  const telefone = localStorage.getItem('bolao_telefone');
+  if (nome && telefone) {
+    nomeCliente = nome;
+    telefoneCliente = telefone;
+    entrarNaSala(nome, telefone);
+  }
+};
 
-/* ================= PIX ================= */
+/* ========= PIX ========= */
 function gerarPix() {
   nomeCliente = nome.value.trim();
   telefoneCliente = telefone.value.trim();
 
   if (!nomeCliente || !telefoneCliente) {
-    status.innerText = 'Preencha todos os dados';
+    status.innerText = 'Preencha nome e telefone';
     return;
   }
+
+  localStorage.setItem('bolao_nome', nomeCliente);
+  localStorage.setItem('bolao_telefone', telefoneCliente);
 
   status.innerText = 'Gerando PIX...';
 
@@ -90,19 +115,17 @@ function gerarPix() {
     })
   })
   .then(r => r.json())
-  .then(data => {
-    if (!data.success) {
-      status.innerText = data.message;
+  .then(d => {
+    if (!d.success) {
+      status.innerText = d.message;
       return;
     }
 
-    paymentId = data.paymentId;
-
+    paymentId = d.paymentId;
     qr.innerHTML = `
-      <img src="data:image/png;base64,${data.qrCodeBase64}">
-      <div class="pixkey">${data.pixKey}</div>
+      <img width="220" src="data:image/png;base64,${d.qrCodeBase64}">
+      <div>${d.pixKey}</div>
     `;
-
     status.innerText = '⏳ Aguardando pagamento...';
     timer = setInterval(verificarPagamento, 5000);
   });
@@ -117,153 +140,56 @@ function verificarPagamento() {
     })
   })
   .then(r => r.json())
-  .then(data => {
-    if (data.status === 'PAID') {
+  .then(d => {
+    if (d.status === 'PAID') {
       clearInterval(timer);
-
-      localStorage.setItem('bolao_auth', JSON.stringify({
-        nome: nomeCliente,
-        telefone: telefoneCliente,
-        expires: Date.now() + (24 * 60 * 60 * 1000) // 24 horas
-      }));
-
       entrarNaSala(nomeCliente, telefoneCliente);
     }
   });
 }
 
-/* ================= SALA ================= */
+/* ========= SALA ========= */
 function entrarNaSala(nome, telefone) {
   loginArea.classList.add('hidden');
   salaBolao.classList.remove('hidden');
-
   meuNome.innerText = nome;
   meuTelefone.innerText = telefone;
-
   carregarParticipantes();
 }
 
 function carregarParticipantes() {
   fetch(API_URL + '?action=infoBolao')
     .then(r => r.json())
-    .then(data => {
+    .then(d => {
       listaParticipantes.innerHTML = '';
-      data.participantes.forEach(p => {
+      d.participantes.forEach(p => {
         const li = document.createElement('li');
-        li.textContent = p.nome;
+        li.textContent = `${p.nome} - ${p.telefone}`;
         listaParticipantes.appendChild(li);
       });
     });
 }
 
-function toggleParticipantes(){
-  const ul = document.getElementById('listaParticipantes');
-  ul.classList.toggle('hidden');
+function toggleParticipantes() {
+  listaParticipantes.classList.toggle('hidden');
 }
 
-/* ================= PULE ================= */
+/* ========= PULE ========= */
 function gerarPule() {
-  const div = document.getElementById('puleContainer');
-  div.classList.remove('hidden');
-  div.innerHTML = 'Gerando pule...';
-
-  fetch(`${API_URL}?action=getPule`)
+  fetch(API_URL + '?action=getPule')
     .then(r => r.json())
-    .then(data => {
-      div.innerHTML = '';
-      if (!data.success) {
-        div.innerHTML = `<p>${data.message}</p>`;
-        return;
-      }
-
-      const { numeros, codigo } = data;
-
-      // Cartão da PULE preenchido automaticamente
-      const card = document.createElement('div');
-      card.style.background = '#1e1e1e';
-      card.style.padding = '12px';
-      card.style.borderRadius = '8px';
-      card.style.gridColumn = '1 / -1';
-      card.style.fontSize = '14px';
-      card.style.lineHeight = '1.5';
-
-      card.innerHTML = `
-        <strong>🎟️ PULE DO BOLÃO</strong><br><br>
-        👤 Nome: ${nomeCliente}<br>
-        📞 Telefone: ${telefoneCliente}<br>
-        🔐 Código de Segurança: <strong>${codigo}</strong><br><br>
-        🎯 Números:<br>
-        ${numeros.join(', ')}
+    .then(d => {
+      puleContainer.innerHTML = `
+        <div class="card">
+          <strong>🎟️ PULE DO BOLÃO</strong><br><br>
+          👤 Nome: ${nomeCliente}<br>
+          📞 Telefone: ${telefoneCliente}<br>
+          🔐 Código: <strong>${d.codigo}</strong><br><br>
+          🎯 Números:<br>${d.numeros.join(', ')}
+        </div>
       `;
-
-      div.appendChild(card);
-
-      // Botão para compartilhar no WhatsApp
-      const btn = document.createElement('button');
-      btn.textContent = 'Compartilhar no WhatsApp';
-      btn.style.marginTop = '8px';
-      btn.onclick = () => compartilharPule(codigo, numeros);
-      card.appendChild(btn);
     });
 }
-
-
-
-/* ================= COMPARTILHAR ================= */
-function compartilharPule(codigo, numeros) {
-  const texto = `
-🎟️ MINHA PULE DO BOLÃO
-👤 Nome: ${nomeCliente}
-📞 Telefone: ${telefoneCliente}
-🔐 Código: ${codigo}
-🎯 Números:
-${numeros.join(', ')}
-  `;
-
-  window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(texto)}`, '_blank');
-}
-
-
-// Auto login pelo localStorage
-if(localStorage.getItem('bolao_nome') && localStorage.getItem('bolao_telefone')){
-  nomeCliente = localStorage.getItem('bolao_nome');
-  telefoneCliente = localStorage.getItem('bolao_telefone');
-  entrarNaSala(nomeCliente, telefoneCliente);
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  
 </script>
-
 </body>
 </html>
