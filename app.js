@@ -12,6 +12,41 @@ function participar() {
   }
 
   fetch(API_URL, {
+    method: 'POST',
+    body: JSON.stringify({
+      action: 'createPayment',
+      nome,
+      telefone
+    })
+  })
+  .then(r => r.text())
+  .then(t => {
+    console.log('Resposta bruta:', t);
+    const d = JSON.parse(t);
+
+    if (!d.success) {
+      alert(d.message || 'Erro ao gerar PIX');
+      return;
+    }
+
+    paymentId = d.paymentId;
+
+    document.getElementById('pixQr').src =
+      'data:image/png;base64,' + d.qrCodeBase64;
+
+    document.getElementById('pixCopia').value = d.pixKey;
+    document.getElementById('pixArea').classList.remove('hidden');
+
+    verificarPagamento();
+  })
+  .catch(err => {
+    console.error(err);
+    alert('Erro de conexão com o servidor');
+  });
+}
+
+
+  fetch(API_URL, {
   method: 'POST',
   body: JSON.stringify({
     action: 'createPayment',
@@ -43,7 +78,6 @@ function verificarPagamento() {
   const timer = setInterval(() => {
     fetch(API_URL, {
       method: 'POST',
-      
       body: JSON.stringify({
         action: 'checkPayment',
         paymentId
@@ -53,12 +87,14 @@ function verificarPagamento() {
     .then(d => {
       if (d.status === 'PAID') {
         clearInterval(timer);
-        alert('Pagamento confirmado!');
+        document.getElementById('pixStatus').innerText =
+          'Pagamento confirmado! 🎉';
         location.reload();
       }
     });
   }, 5000);
 }
+
 
 function copiarPix() {
   navigator.clipboard.writeText(
