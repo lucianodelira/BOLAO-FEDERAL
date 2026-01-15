@@ -3,117 +3,145 @@
 <head>
 <meta charset="UTF-8">
 <title>Bolão Loteria Federal</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
-body { font-family: Arial; background:#f4f4f4; margin:0 }
-header { background:#1d3557; color:#fff; padding:15px; text-align:center }
-.container { max-width:900px; margin:auto; padding:20px }
-.card { background:#fff; padding:20px; border-radius:10px; margin-bottom:20px }
-input, button { width:100%; padding:10px; margin-top:10px }
-button { background:#1d3557; color:#fff; border:none; border-radius:6px }
-.hidden { display:none }
-.stats { display:flex; gap:10px }
-.stats div { flex:1; background:#e9ecef; padding:10px; border-radius:8px; text-align:center }
+body {
+  font-family: Arial, sans-serif;
+  background: #0d0d0d;
+  color: #fff;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+.container {
+  background: #1c1c1c;
+  padding: 20px;
+  border-radius: 10px;
+  width: 100%;
+  max-width: 360px;
+  text-align: center;
+}
+
+input, button {
+  width: 100%;
+  padding: 12px;
+  margin-top: 10px;
+  border-radius: 5px;
+  border: none;
+}
+
+button {
+  background: #00c853;
+  color: #000;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+button:disabled {
+  background: #555;
+}
+
+#qr {
+  margin-top: 15px;
+}
+
+img {
+  width: 220px;
+}
 </style>
 </head>
 
 <body>
 
-<header>
-<h1>🎟️ Bolão da Loteria Federal</h1>
-<p>Valor da cota: R$ 18,00 | Total: 200 cotas</p>
-</header>
-
 <div class="container">
+  <h2>Bolão Loteria Federal</h2>
 
-<div class="card">
-<h3>Entrar no Bolão</h3>
-<input id="name" placeholder="Nome completo">
-<input id="phone" placeholder="Telefone (WhatsApp)">
-<button id="btnPix" onclick="startPayment()">Gerar PIX</button>
-</div>
+  <input id="nome" placeholder="Seu nome">
+  <input id="telefone" placeholder="Telefone / WhatsApp">
 
-<div class="card hidden" id="pixArea">
-<h3>Pagamento PIX</h3>
-<img id="pixQr" width="220"><br><br>
-<input id="pixCopia" readonly>
-<p id="pixStatus">Aguardando pagamento...</p>
-</div>
+  <button onclick="gerarPix()">GERAR PIX</button>
 
-<div class="card">
-<h3>Status do Bolão</h3>
-<div class="stats">
-<div><strong id="freeCotas">200</strong><br>Disponíveis</div>
-<div><strong id="usedCotas">0</strong><br>Ocupadas</div>
-<div><strong>200</strong><br>Total</div>
-</div>
-</div>
+  <div id="status"></div>
 
+  <div id="qr"></div>
 </div>
 
 <script>
 const API_URL = 'https://script.google.com/macros/s/AKfycbyyFITAR_NOlCc1zNuML7omJrSZje84pWC9e5zu0-5DNxnmoVcSkHyYzHJujcfC_VzZ/exec';
 let paymentId = null;
+let intervalo = null;
 
-function startPayment() {
-  const btn = document.getElementById('btnPix');
-  btn.disabled = true;
-  btn.innerText = 'Gerando PIX...';
+async function gerarPix() {
+  document.getElementById('status').innerText = 'Gerando PIX...';
 
-  const nome = document.getElementById('name').value.trim();
-  const telefone = document.getElementById('phone').value.trim();
+  try {
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      mode: 'cors',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        action: 'createPayment',
+        nome: document.getElementById('nome').value,
+        telefone: document.getElementById('telefone').value
+      })
+    });
 
-  if (!nome || !telefone) {
-    alert('Preencha nome e telefone');
-    btn.disabled = false;
-    btn.innerText = 'Gerar PIX';
-    return;
-  }
+    const data = await res.json();
 
-  fetch(API_URL, {
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({ action:'createPayment', nome, telefone })
-  })
-  .then(r => r.json())
-  .then(d => {
-    if (!d.success) {
-      alert(d.message);
-      btn.disabled = false;
-      btn.innerText = 'Gerar PIX';
+    if (!data.success) {
+      document.getElementById('status').innerText = data.message || 'Erro ao gerar PIX';
       return;
     }
 
-    paymentId = d.paymentId;
-    pixQr.src = 'data:image/png;base64,' + d.qrCodeBase64;
-    pixCopia.value = d.pixKey;
-    pixArea.classList.remove('hidden');
-    btn.innerText = 'PIX Gerado';
-    checkPayment();
-  })
-  .catch(() => {
-    alert('Erro de conexão com o servidor');
-    btn.disabled = false;
-    btn.innerText = 'Gerar PIX';
-  });
+    paymentId = data.paymentId;
+
+    document.getElementById('qr').innerHTML = `
+      <p>Escaneie o QR Code</p>
+      <img src="data:image/png;base64,${data.qrCodeBase64}">
+      <p style="word-break:break-all">${data.pixKey}</p>
+    `;
+
+    document.getElementById('status').innerText = 'Aguardando pagamento...';
+
+    intervalo = setInterval(verificarPagamento, 5000);
+
+  } catch (e) {
+    document.getElementById('status').innerText = 'Erro de conexão com o servidor';
+    console.error(e);
+  }
 }
 
-function checkPayment() {
-  const timer = setInterval(() => {
-    fetch(API_URL, {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ action:'checkPayment', paymentId })
-    })
-    .then(r => r.json())
-    .then(d => {
-      if (d.status === 'PAID') {
-        clearInterval(timer);
-        pixStatus.innerText = 'Pagamento confirmado 🎉';
-      }
+async function verificarPagamento() {
+  if (!paymentId) return;
+
+  try {
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      mode: 'cors',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        action: 'checkPayment',
+        paymentId: paymentId
+      })
     });
-  }, 5000);
+
+    const data = await res.json();
+
+    if (data.status === 'PAID') {
+      clearInterval(intervalo);
+      document.getElementById('status').innerText = '✅ Pagamento aprovado!';
+    }
+
+  } catch (e) {
+    console.error('Erro ao verificar pagamento', e);
+  }
 }
 </script>
 
