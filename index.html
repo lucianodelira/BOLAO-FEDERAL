@@ -71,79 +71,62 @@ img {
 
 <script>
 const API_URL = 'https://script.google.com/macros/s/AKfycbyyFITAR_NOlCc1zNuML7omJrSZje84pWC9e5zu0-5DNxnmoVcSkHyYzHJujcfC_VzZ/exec';
-let paymentId = null;
-let intervalo = null;
 
-async function gerarPix() {
+let paymentId = null;
+let timer = null;
+
+function gerarPix() {
   document.getElementById('status').innerText = 'Gerando PIX...';
 
-  try {
-    const res = await fetch(API_URL, {
-      method: 'POST',
-      mode: 'cors',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        action: 'createPayment',
-        nome: document.getElementById('nome').value,
-        telefone: document.getElementById('telefone').value
-      })
-    });
-
-    const data = await res.json();
-
+  fetch(API_URL, {
+    method: 'POST',
+    body: JSON.stringify({
+      action: 'createPayment',
+      nome: document.getElementById('nome').value,
+      telefone: document.getElementById('telefone').value
+    })
+  })
+  .then(r => r.json())
+  .then(data => {
     if (!data.success) {
-      document.getElementById('status').innerText = data.message || 'Erro ao gerar PIX';
+      document.getElementById('status').innerText = data.message;
       return;
     }
 
     paymentId = data.paymentId;
 
     document.getElementById('qr').innerHTML = `
-      <p>Escaneie o QR Code</p>
       <img src="data:image/png;base64,${data.qrCodeBase64}">
-      <p style="word-break:break-all">${data.pixKey}</p>
+      <p>${data.pixKey}</p>
     `;
 
     document.getElementById('status').innerText = 'Aguardando pagamento...';
-
-    intervalo = setInterval(verificarPagamento, 5000);
-
-  } catch (e) {
+    timer = setInterval(verificarPagamento, 5000);
+  })
+  .catch(err => {
+    console.error(err);
     document.getElementById('status').innerText = 'Erro de conexão com o servidor';
-    console.error(e);
-  }
+  });
 }
 
-async function verificarPagamento() {
-  if (!paymentId) return;
-
-  try {
-    const res = await fetch(API_URL, {
-      method: 'POST',
-      mode: 'cors',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        action: 'checkPayment',
-        paymentId: paymentId
-      })
-    });
-
-    const data = await res.json();
-
+function verificarPagamento() {
+  fetch(API_URL, {
+    method: 'POST',
+    body: JSON.stringify({
+      action: 'checkPayment',
+      paymentId: paymentId
+    })
+  })
+  .then(r => r.json())
+  .then(data => {
     if (data.status === 'PAID') {
-      clearInterval(intervalo);
+      clearInterval(timer);
       document.getElementById('status').innerText = '✅ Pagamento aprovado!';
     }
-
-  } catch (e) {
-    console.error('Erro ao verificar pagamento', e);
-  }
+  });
 }
 </script>
+
 
 </body>
 </html>
