@@ -4,20 +4,18 @@
   <meta charset="UTF-8" />
   <title>Bolão Loteria Federal</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="stylesheet" href="Styles.css" />
 
   <style>
-    body { font-family: Arial, sans-serif; background:#f4f4f4; margin:0; padding:0 }
+    body { font-family: Arial, sans-serif; background:#f4f4f4; margin:0 }
     header { background:#1d3557; color:#fff; padding:15px; text-align:center }
     .container { padding:20px; max-width:900px; margin:auto }
     .card { background:#fff; padding:20px; border-radius:10px; margin-bottom:20px }
     input, button { padding:10px; width:100%; margin-top:10px }
     button { background:#1d3557; color:#fff; border:none; border-radius:6px; cursor:pointer }
-    button:disabled { background:#999 }
-    .stats { display:flex; justify-content:space-between; gap:10px }
+    .stats { display:flex; gap:10px }
     .stats div { flex:1; background:#e9ecef; padding:10px; border-radius:8px; text-align:center }
     ul { list-style:none; padding:0 }
-    li { padding:8px; border-bottom:1px solid #ddd }
+    li { padding:6px 0; border-bottom:1px solid #ddd }
     .hidden { display:none }
   </style>
 </head>
@@ -31,39 +29,29 @@
 
 <div class="container">
 
-  <!-- CADASTRO -->
   <div class="card" id="registerCard">
     <h2>Entrar no Bolão</h2>
-    <input type="text" id="name" placeholder="Seu nome completo" />
-    <input type="tel" id="phone" placeholder="Seu telefone (WhatsApp)" />
-    <button onclick="startPayment()">Gerar PIX e Participar</button>
+    <input id="name" placeholder="Seu nome completo">
+    <input id="phone" placeholder="Telefone (WhatsApp)">
+    <button onclick="startPayment()">Gerar PIX</button>
   </div>
 
-  <!-- PIX -->
   <div class="card hidden" id="pixArea">
     <h3>Pagamento PIX</h3>
-    <img id="pixQr" style="width:220px" />
-    <input id="pixCopia" readonly />
+    <img id="pixQr" width="220"><br><br>
+    <input id="pixCopia" readonly>
     <p id="pixStatus">Aguardando pagamento...</p>
   </div>
 
-  <!-- STATUS -->
   <div class="card">
     <h3>Status do Bolão</h3>
     <div class="stats">
-      <div>
-        <strong id="freeCotas">200</strong><br>Disponíveis
-      </div>
-      <div>
-        <strong id="usedCotas">0</strong><br>Ocupadas
-      </div>
-      <div>
-        <strong>200</strong><br>Total
-      </div>
+      <div><strong id="freeCotas">200</strong><br>Disponíveis</div>
+      <div><strong id="usedCotas">0</strong><br>Ocupadas</div>
+      <div><strong>200</strong><br>Total</div>
     </div>
   </div>
 
-  <!-- PARTICIPANTES -->
   <div class="card">
     <h3>👥 Participantes</h3>
     <ul id="participantsList"></ul>
@@ -71,21 +59,13 @@
 
 </div>
 
-<!-- SCRIPT ÚNICO -->
 <script>
-/* ================= CONFIG ================= */
-
-// 🔴 COLE A URL DO SEU WEB APP AQUI
 const API_URL = 'https://script.google.com/macros/s/AKfycbzS32wgwNYZhNQhXQ17OSQUx56NbRuZmrv5l0Hi2cm7k_0WzqZ-BtfQy3BIKzoQZaId/exec';
-
 let paymentId = null;
 
-/* ================= FUNÇÕES ================= */
-
 function startPayment() {
-  const nome = document.getElementById('name').value.trim();
-  const telefone = document.getElementById('phone').value.trim();
-
+  const nome = name.value.trim();
+  const telefone = phone.value.trim();
   if (!nome || !telefone) {
     alert('Preencha nome e telefone');
     return;
@@ -94,78 +74,54 @@ function startPayment() {
   fetch(API_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      action: 'createPayment',
-      nome,
-      telefone
-    })
+    body: JSON.stringify({ action:'createPayment', nome, telefone })
   })
   .then(r => r.json())
   .then(d => {
-    if (!d.success) {
-      alert(d.message || 'Erro ao gerar PIX');
-      return;
-    }
-
+    if (!d.success) return alert(d.message);
     paymentId = d.paymentId;
-
-    document.getElementById('pixQr').src =
-      'data:image/png;base64,' + d.qrCodeBase64;
-
-    document.getElementById('pixCopia').value = d.pixKey;
-    document.getElementById('pixArea').classList.remove('hidden');
-
-    verificarPagamento();
+    pixQr.src = 'data:image/png;base64,' + d.qrCodeBase64;
+    pixCopia.value = d.pixKey;
+    pixArea.classList.remove('hidden');
+    checkPayment();
   })
-  .catch(() => {
-    alert('Erro de conexão com o servidor');
-  });
+  .catch(() => alert('Erro de conexão com o servidor'));
 }
 
-function verificarPagamento() {
-  const timer = setInterval(() => {
+function checkPayment() {
+  const t = setInterval(() => {
     fetch(API_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        action: 'checkPayment',
-        paymentId
-      })
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ action:'checkPayment', paymentId })
     })
     .then(r => r.json())
     .then(d => {
       if (d.status === 'PAID') {
-        clearInterval(timer);
-        document.getElementById('pixStatus').innerText =
-          'Pagamento confirmado 🎉';
-        carregarSala();
+        clearInterval(t);
+        pixStatus.innerText = 'Pagamento confirmado 🎉';
+        loadBolao();
       }
     });
   }, 5000);
 }
 
-function carregarSala() {
+function loadBolao() {
   fetch(API_URL + '?action=infoBolao')
     .then(r => r.json())
     .then(d => {
-      document.getElementById('usedCotas').innerText = d.ocupadas;
-      document.getElementById('freeCotas').innerText =
-        d.total - d.ocupadas;
-
-      const ul = document.getElementById('participantsList');
-      ul.innerHTML = '';
-
+      usedCotas.innerText = d.ocupadas;
+      freeCotas.innerText = d.total - d.ocupadas;
+      participantsList.innerHTML = '';
       d.participantes.forEach(p => {
         const li = document.createElement('li');
-        li.textContent = p.nome + ' - ' + p.telefone;
-        ul.appendChild(li);
+        li.textContent = `${p.nome} - ${p.telefone}`;
+        participantsList.appendChild(li);
       });
     });
 }
 
-/* ================= INIT ================= */
-
-carregarSala();
+loadBolao();
 </script>
 
 </body>
