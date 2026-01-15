@@ -75,74 +75,79 @@
 </div>
 
 <script src="Modal.js"></script>
-<script src="Script.js"></script>
 <script>
-const MAX_COTAS = 200;
-
-function getParticipants() {
-  return JSON.parse(localStorage.getItem('participants') || '[]');
-}
-
-function saveParticipants(list) {
-  localStorage.setItem('participants', JSON.stringify(list));
-}
-
-function updateStats() {
-  const list = getParticipants();
-  document.getElementById('usedCotas').innerText = list.length;
-  document.getElementById('freeCotas').innerText = MAX_COTAS - list.length;
-  const ul = document.getElementById('participantsList');
-  ul.innerHTML = '';
-  list.forEach(p => {
-    const li = document.createElement('li');
-    li.textContent = p.name + ' - ' + p.phone;
-    ul.appendChild(li);
-  });
-}
+const API_URL = 'SUA_URL_DO_WEB_APP';
+let paymentId = null;
 
 function startPayment() {
-  const name = document.getElementById('name').value.trim();
-  const phone = document.getElementById('phone').value.trim();
-  if (!name || !phone) {
+  const nome = document.getElementById('name').value.trim();
+  const telefone = document.getElementById('phone').value.trim();
+
+  if (!nome || !telefone) {
     alert('Preencha nome e telefone');
     return;
   }
-  localStorage.setItem('pendingUser', JSON.stringify({ name, phone }));
-  openPaymentModal();
+
+  fetch(API_URL, {
+    method: 'POST',
+    body: JSON.stringify({
+      action: 'createPayment',
+      nome,
+      telefone
+    })
+  })
+  .then(r => r.json())
+  .then(d => {
+    if (!d.success) {
+      alert(d.message);
+      return;
+    }
+
+    paymentId = d.paymentId;
+    document.getElementById('pixQr').src =
+      'data:image/png;base64,' + d.qrCodeBase64;
+    document.getElementById('pixCopia').value = d.pixKey;
+
+    verificarPagamento();
+  });
 }
 
-function unlockAccess() {
-  const user = JSON.parse(localStorage.getItem('pendingUser'));
-  if (!user) return;
-  const list = getParticipants();
-  if (list.length >= MAX_COTAS) return;
-  list.push(user);
-  saveParticipants(list);
-  localStorage.setItem('member', JSON.stringify(user));
-  localStorage.removeItem('pendingUser');
+function verificarPagamento() {
+  const timer = setInterval(() => {
+    fetch(API_URL, {
+      method: 'POST',
+      body: JSON.stringify({
+        action: 'checkPayment',
+        paymentId
+      })
+    })
+    .then(r => r.json())
+    .then(d => {
+      if (d.status === 'PAID') {
+        clearInterval(timer);
+        carregarSala();
+      }
+    });
+  }, 5000);
 }
 
-function loadMember() {
-  const member = JSON.parse(localStorage.getItem('member'));
-  if (!member) return;
-  document.getElementById('registerCard').classList.add('hidden');
-  document.getElementById('memberArea').classList.remove('hidden');
-  document.getElementById('memberName').innerText = member.name;
-  document.getElementById('memberPhone').innerText = member.phone;
+function carregarSala() {
+  fetch(API_URL + '?action=infoBolao')
+    .then(r => r.json())
+    .then(d => {
+      document.getElementById('usedCotas').innerText = d.ocupadas;
+      document.getElementById('freeCotas').innerText =
+        d.total - d.ocupadas;
+
+      const ul = document.getElementById('participantsList');
+      ul.innerHTML = '';
+      d.participantes.forEach(p => {
+        const li = document.createElement('li');
+        li.textContent = p.nome + ' - ' + p.telefone;
+        ul.appendChild(li);
+      });
+    });
 }
 
-function showPalpites() {
-  document.getElementById('palpitesArea').classList.toggle('hidden');
-}
-
-// Integração: quando o Script.js libera acesso
-if (localStorage.getItem('privilegeAccess') === 'true') {
-  unlockAccess();
-  localStorage.removeItem('privilegeAccess');
-}
-
-updateStats();
-loadMember();
+carregarSala();
 </script>
-</body>
-</html>
