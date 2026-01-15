@@ -259,32 +259,64 @@ function toggleParticipantes(){
   ul.classList.toggle('hidden');
 }
 
-function gerarPule(){
-  const div=document.getElementById('puleContainer');
-  div.classList.remove('hidden'); div.innerHTML='Carregando...';
-  fetch(`${API_URL}?action=getPule&nome=${encodeURIComponent(nomeCliente)}&telefone=${encodeURIComponent(telefoneCliente)}`)
-  .then(r=>r.json())
-  .then(data=>{
-    div.innerHTML='';
-    if(!data.success){div.innerHTML=`<p>${data.message}</p>`; return;}
-    const { participante, numeros } = data;
+function gerarPule() {
+  const div = document.getElementById('puleContainer');
+  div.classList.remove('hidden');
+  div.innerHTML = 'Carregando...';
 
-    // Cartão do participante
-    const card=document.createElement('div');
-    card.style.background='#1e1e1e'; card.style.padding='8px'; card.style.borderRadius='6px'; card.style.gridColumn='1 / -1';
-    card.innerHTML = `<strong>${participante.nome}</strong><br>${participante.telefone}<br>ID: ${participante.id}<br><br>
-      <button onclick="compartilharPule()">Compartilhar Tudo no WhatsApp</button>`;
-    div.appendChild(card);
+  // Busca todos participantes ativos
+  fetch(`${API_URL}?action=infoBolao`)
+    .then(r => r.json())
+    .then(data => {
+      // Pega apenas o usuário logado
+      const participante = data.participantes.find(p => 
+        p.nome === nomeCliente && p.telefone === telefoneCliente
+      );
 
-    // Números
-    numeros.forEach(n=>{
-      const cell=document.createElement('div');
-      cell.style.background='#1e1e1e'; cell.style.padding='6px'; cell.style.borderRadius='4px'; cell.style.fontSize='14px';
-      cell.textContent = n;
-      div.appendChild(cell);
+      if (!participante) {
+        div.innerHTML = '<p>Participante não encontrado</p>';
+        return;
+      }
+
+      // Chama getPule passando o ID do participante logado
+      fetch(`${API_URL}?action=getPule&id=${encodeURIComponent(participante.id)}`)
+        .then(r => r.json())
+        .then(data => {
+          div.innerHTML = '';
+          if (!data.success) { 
+            div.innerHTML = `<p>${data.message}</p>`; 
+            return; 
+          }
+
+          const { participante, numeros } = data;
+
+          // Cartão do participante
+          const card = document.createElement('div');
+          card.style.background = '#1e1e1e';
+          card.style.padding = '8px';
+          card.style.borderRadius = '6px';
+          card.style.gridColumn = '1 / -1';
+          card.innerHTML = `
+            <strong>${participante.nome}</strong><br>
+            ${participante.telefone}<br>ID: ${participante.id}<br><br>
+            <button onclick="compartilharPule()">Compartilhar Tudo no WhatsApp</button>
+          `;
+          div.appendChild(card);
+
+          // Mostra os números da pule
+          numeros.forEach(n => {
+            const cell = document.createElement('div');
+            cell.style.background = '#1e1e1e';
+            cell.style.padding = '6px';
+            cell.style.borderRadius = '4px';
+            cell.style.fontSize = '14px';
+            cell.textContent = n;
+            div.appendChild(cell);
+          });
+        });
     });
-  });
 }
+
 
 function compartilharPule(){
   fetch(API_URL,{
