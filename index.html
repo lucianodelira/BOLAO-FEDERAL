@@ -49,14 +49,6 @@ ul li { background:#1e1e1e; padding:8px; border-radius:6px; margin-bottom:6px; f
 
 
 
-<div class="card">
-  <h3>💬 Chat do Bolão</h3>
-
-  <div id="chatBox" style="max-height:200px;overflow-y:auto;background:#1c1c1c;padding:10px;border-radius:8px;font-size:14px"></div>
-
-  <input id="chatMsg" placeholder="Digite sua mensagem...">
-  <button onclick="enviarMensagem()">Enviar</button>
-</div>
 
 
 
@@ -310,48 +302,6 @@ ${numeros.join(', ')}
 
 
 
-
-
-function carregarChat() {
-  fetch(API_URL + '?action=getChat')
-    .then(r => r.json())
-    .then(data => {
-      const box = document.getElementById('chatBox');
-      box.innerHTML = '';
-      data.messages.forEach(m => {
-        const div = document.createElement('div');
-        div.innerHTML = `<strong>${m.nome}:</strong> ${m.mensagem}`;
-        div.style.marginBottom = '6px';
-        box.appendChild(div);
-      });
-      box.scrollTop = box.scrollHeight;
-    });
-}
-
-function enviarMensagem() {
-  const input = document.getElementById('chatMsg');
-  const texto = input.value.trim();
-  if (!texto) return;
-
-  fetch(API_URL, {
-    method: 'POST',
-    body: JSON.stringify({
-      action: 'sendChat',
-      nome: nomeCliente,
-      mensagem: texto
-    })
-  }).then(() => {
-    input.value = '';
-    carregarChat();
-  });
-}
-
-// Atualiza automaticamente
-setInterval(() => {
-  if (!document.getElementById('salaBolao').classList.contains('hidden')) {
-    carregarChat();
-  }
-}, 4000);
 
 
 
