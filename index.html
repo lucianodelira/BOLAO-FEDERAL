@@ -20,6 +20,38 @@ button { background:#00e676; color:#000; font-weight:bold; cursor:pointer; }
 ul { padding-left:18px; margin-top:10px; }
 ul li { background:#1e1e1e; padding:8px; border-radius:6px; margin-bottom:6px; font-size:14px; }
 #puleContainer { display:grid; grid-template-columns: 1fr 1fr; gap:10px; }
+
+
+
+
+.pix-box {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.pix-box input {
+  flex: 1;
+  background: #1e1e1e;
+  color: #0f0;
+  border-radius: 6px;
+  padding: 8px;
+  font-size: 13px;
+  border: none;
+}
+
+.pix-box button {
+  background: #00e676;
+  color: #000;
+  border-radius: 6px;
+  padding: 8px 10px;
+  font-size: 13px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+
+
 </style>
 </head>
 <body>
@@ -134,9 +166,27 @@ function gerarPix() {
     paymentId = data.paymentId;
 
     qr.innerHTML = `
-      <img src="data:image/png;base64,${data.qrCodeBase64}">
-      <div class="pixkey">${data.pixKey}</div>
-    `;
+  <img src="data:image/png;base64,${data.qrCodeBase64}">
+
+  <div class="pix-box">
+    <input id="pixKeyInput" value="${data.pixKey}" readonly>
+    <button onclick="copiarPix()">📋 Copiar</button>
+  </div>
+
+  <small style="opacity:.7;display:block;margin-top:4px">
+    Clique para copiar a chave Pix
+  </small>
+`;
+setTimeout(() => {
+  copiarPix();
+}, 500);
+
+
+
+
+
+
+
 
     status.innerText = '⏳ Aguardando pagamento...';
     timer = setInterval(verificarPagamento, 5000);
@@ -303,6 +353,24 @@ ${numeros.join(', ')}
 
 
 
+
+function copiarPix() {
+  const input = document.getElementById('pixKeyInput');
+  const status = document.getElementById('status');
+
+  input.select();
+  input.setSelectionRange(0, 99999);
+
+  navigator.clipboard.writeText(input.value)
+    .then(() => {
+      status.innerText = '✅ Chave Pix copiada!';
+      status.style.color = '#00e676';
+    })
+    .catch(() => {
+      status.innerText = '❌ Erro ao copiar a chave Pix';
+      status.style.color = '#ff5252';
+    });
+}
 
 
   
