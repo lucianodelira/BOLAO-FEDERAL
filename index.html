@@ -311,7 +311,7 @@
 
             nomeCliente = nome;
             telefoneCliente = telefone;
-            userId = gerarUserId();
+            
 
             try {
                 const res = await fetch(API_URL, {
@@ -323,6 +323,8 @@
                 if (!data.success) throw new Error(data.message);
 
                 paymentId = data.paymentId;
+userId = data.userId;
+
 
                 document.getElementById('qrArea').classList.remove('hidden');
                 document.getElementById('qrImage').src = `data:image/png;base64,${data.qrCodeBase64}`;
