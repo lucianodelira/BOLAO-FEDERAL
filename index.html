@@ -8,160 +8,203 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-        
+       
         body {
             font-family: 'Inter', system-ui, sans-serif;
             background: linear-gradient(135deg, #0a0a0a, #1a1a2e, #16213e);
             color: #fff;
+            margin: 0;
+            line-height: inherit;
         }
-        
+       
         .container {
             max-width: 420px;
-            margin: 40px auto;
+            margin: 2rem auto;
             background: #111827;
             border-radius: 24px;
             box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.5);
             overflow: hidden;
         }
-        
+       
         .sala {
             max-width: 920px;
-            margin: 40px auto;
-            padding: 0 20px;
+            margin: 2rem auto;
+            padding: 0 1rem;
         }
-        
+       
         .card {
             background: #1f2937;
             border-radius: 20px;
-            padding: 24px;
+            padding: 1.5rem;
             box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.3);
         }
-        
+       
         .qr-code {
             background: white;
-            padding: 16px;
+            padding: 1rem;
             border-radius: 16px;
             display: inline-block;
         }
-        
+       
         .status-dot {
             animation: pulse 2s infinite;
         }
-        
+       
         @keyframes pulse {
             0%, 100% { opacity: 1; }
             50% { opacity: 0.4; }
         }
-        
+       
         .pule-card {
             background: linear-gradient(135deg, #1e3a8a, #3b82f6);
             border-radius: 20px;
-            padding: 24px;
+            padding: 1.5rem;
             color: white;
         }
-        
+       
         .home-card {
             transition: all 0.3s ease;
         }
-        
+       
         .home-card:hover {
             transform: translateY(-8px);
             box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.3);
+        }
+
+        /* Grade de números responsiva */
+        .numeros-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 12px;
+            margin: 1.5rem 0;
+            justify-items: center;
+        }
+
+        .numero-bola {
+            width: 64px;
+            height: 64px;
+            background: linear-gradient(145deg, #ffffff, #e6e6e6);
+            color: #000;
+            font-weight: 700;
+            font-size: 18px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.2), 0 4px 8px rgba(0,0,0,0.25);
+            font-family: monospace;
+            letter-spacing: 1px;
+        }
+
+        /* Ajustes responsivos */
+        @media (min-width: 480px) {
+            .numeros-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+            .numero-bola { width: 70px; height: 70px; font-size: 20px; border-radius: 18px; }
+        }
+
+        @media (min-width: 640px) {
+            .container { max-width: 500px; }
+            .numeros-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 20px; }
+            .numero-bola { width: 80px; height: 80px; font-size: 22px; }
+        }
+
+        @media (min-width: 768px) {
+            .container { max-width: 640px; }
+            .sala { padding: 0 2rem; }
+            .numeros-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 24px; margin: 2rem 0; }
+            .numero-bola { width: 90px; height: 90px; font-size: 24px; border-radius: 20px; }
+            .card { padding: 2rem; }
+        }
+
+        @media (max-width: 400px) {
+            .numero-bola { width: 58px; height: 58px; font-size: 16px; border-radius: 14px; }
+            h1 { font-size: 2rem; }
+            .home-card { padding: 1.5rem; }
         }
     </style>
 </head>
 <body class="min-h-screen pb-12">
 
     <!-- TELA INICIAL (HOME) -->
-    <div id="homeArea" class="container p-8">
-        <div class="flex items-center justify-center gap-3 mb-10">
-            <div class="w-14 h-14 bg-emerald-500 rounded-3xl flex items-center justify-center text-4xl shadow-inner">🎟️</div>
+    <div id="homeArea" class="container p-6 sm:p-8">
+        <div class="flex items-center justify-center gap-3 mb-8 sm:mb-10">
+            <div class="w-12 h-12 sm:w-14 sm:h-14 bg-emerald-500 rounded-3xl flex items-center justify-center text-3xl sm:text-4xl shadow-inner">🎟️</div>
             <div>
-                <h1 class="text-4xl font-bold tracking-tighter">BOLÃO FEDERAL</h1>
+                <h1 class="text-3xl sm:text-4xl font-bold tracking-tighter">BOLÃO FEDERAL</h1>
                 <p class="text-emerald-400 text-sm font-medium">Loteria Federal • Oficial</p>
             </div>
         </div>
-
         <div class="grid grid-cols-1 gap-6">
             <!-- CARD NOVO -->
-            <div onclick="irParaPix()" 
-                 class="home-card bg-gradient-to-br from-emerald-600 to-teal-600 rounded-3xl p-8 cursor-pointer text-center">
-                <div class="w-16 h-16 mx-auto bg-white/20 rounded-2xl flex items-center justify-center text-5xl mb-6">✨</div>
-                <h2 class="text-2xl font-bold mb-2">Quero participar</h2>
+            <div onclick="irParaPix()"
+                 class="home-card bg-gradient-to-br from-emerald-600 to-teal-600 rounded-3xl p-6 sm:p-8 cursor-pointer text-center">
+                <div class="w-14 h-14 sm:w-16 sm:h-16 mx-auto bg-white/20 rounded-2xl flex items-center justify-center text-4xl sm:text-5xl mb-4 sm:mb-6">✨</div>
+                <h2 class="text-xl sm:text-2xl font-bold mb-2">Quero participar</h2>
                 <p class="text-emerald-100 text-sm">Gerar PIX de R$ 10,00 e entrar na sala agora</p>
             </div>
-
             <!-- CARD JÁ PAGUEI -->
-            <div class="home-card bg-gray-900 border border-gray-700 rounded-3xl p-8">
-                <h2 class="text-xl font-semibold mb-6 flex items-center gap-3">
+            <div class="home-card bg-gray-900 border border-gray-700 rounded-3xl p-6 sm:p-8">
+                <h2 class="text-lg sm:text-xl font-semibold mb-4 sm:mb-6 flex items-center gap-3">
                     <i class="fas fa-key"></i>
                     Já paguei?
                 </h2>
                 <p class="text-gray-400 text-sm mb-4">Digite seu código de acesso para entrar na sala</p>
-                
-                <input id="codigoAcesso" 
-                       type="text" 
+               
+                <input id="codigoAcesso"
+                       type="text"
                        maxlength="10"
                        placeholder="BOL-ABC123"
-                       class="w-full bg-gray-800 border border-gray-700 rounded-2xl px-6 py-5 text-xl font-mono text-center focus:outline-none focus:border-emerald-500 uppercase">
-                
-                <button onclick="validarCodigoAcesso()" 
-                        class="mt-6 w-full bg-white text-black font-bold py-5 rounded-3xl text-lg flex items-center justify-center gap-3 hover:bg-emerald-400 transition">
+                       class="w-full bg-gray-800 border border-gray-700 rounded-2xl px-5 sm:px-6 py-4 sm:py-5 text-lg sm:text-xl font-mono text-center focus:outline-none focus:border-emerald-500 uppercase">
+               
+                <button onclick="validarCodigoAcesso()"
+                        class="mt-4 sm:mt-6 w-full bg-white text-black font-bold py-4 sm:py-5 rounded-3xl text-base sm:text-lg flex items-center justify-center gap-3 hover:bg-emerald-400 transition">
                     <i class="fas fa-arrow-right"></i>
                     ENTRAR NA SALA
                 </button>
-                
-                <p class="text-[10px] text-gray-500 text-center mt-6">Código recebido após o pagamento</p>
+               
+                <p class="text-[10px] sm:text-xs text-gray-500 text-center mt-4 sm:mt-6">Código recebido após o pagamento</p>
             </div>
         </div>
-
-        <div class="text-center text-xs text-gray-500 mt-12">
+        <div class="text-center text-xs text-gray-500 mt-8 sm:mt-12">
             Pagamento 100% seguro • Acesso vitalício ao bolão
         </div>
     </div>
 
     <!-- TELA DE PIX (NOVO PARTICIPANTE) -->
-    <div id="loginArea" class="container p-8 hidden">
-        <!-- mesmo conteúdo bonito do anterior -->
-        <div class="flex items-center gap-3 mb-8">
-            <button onclick="voltarParaHome()" class="text-gray-400 hover:text-white">
+    <div id="loginArea" class="container p-6 sm:p-8 hidden">
+        <div class="flex items-center gap-3 mb-6 sm:mb-8">
+            <button onclick="voltarParaHome()" class="text-gray-400 hover:text-white text-sm sm:text-base">
                 ← Voltar
             </button>
             <div class="flex-1"></div>
             <div class="w-10 h-10 bg-emerald-500 rounded-2xl flex items-center justify-center text-2xl">🎟️</div>
         </div>
-
-        <h1 class="text-3xl font-bold tracking-tighter text-center mb-8">Gerar PIX</h1>
-
-        <div class="space-y-6">
+        <h1 class="text-2xl sm:text-3xl font-bold tracking-tighter text-center mb-6 sm:mb-8">Gerar PIX</h1>
+        <div class="space-y-5 sm:space-y-6">
             <div>
                 <label class="text-xs font-medium text-gray-400 block mb-2">NOME COMPLETO</label>
-                <input id="nome" type="text" class="w-full bg-gray-900 border border-gray-700 rounded-2xl px-5 py-4 text-lg focus:outline-none focus:border-emerald-500" placeholder="Seu nome completo">
+                <input id="nome" type="text" class="w-full bg-gray-900 border border-gray-700 rounded-2xl px-5 py-4 text-base sm:text-lg focus:outline-none focus:border-emerald-500" placeholder="Seu nome completo">
             </div>
-
             <div>
                 <label class="text-xs font-medium text-gray-400 block mb-2">TELEFONE / WHATSAPP</label>
-                <input id="telefone" type="tel" maxlength="15" 
-                       class="w-full bg-gray-900 border border-gray-700 rounded-2xl px-5 py-4 text-lg focus:outline-none focus:border-emerald-500" placeholder="(XX) 9XXXX-XXXX">
+                <input id="telefone" type="tel" maxlength="15"
+                       class="w-full bg-gray-900 border border-gray-700 rounded-2xl px-5 py-4 text-base sm:text-lg focus:outline-none focus:border-emerald-500" placeholder="(XX) 9XXXX-XXXX">
             </div>
-
             <button onclick="gerarPix()" id="btnGerarPix"
-                    class="w-full bg-emerald-500 hover:bg-emerald-600 transition-all text-black font-bold text-xl py-5 rounded-3xl flex items-center justify-center gap-3">
+                    class="w-full bg-emerald-500 hover:bg-emerald-600 transition-all text-black font-bold text-lg sm:text-xl py-4 sm:py-5 rounded-3xl flex items-center justify-center gap-3">
                 <i class="fas fa-bolt"></i>
                 GERAR PIX R$ 10,00
             </button>
-
             <div id="status" class="text-center text-sm min-h-[24px]"></div>
-
             <div id="qrArea" class="hidden text-center">
                 <div class="qr-code mx-auto shadow-2xl">
-                    <img id="qrImage" class="w-64 h-64">
+                    <img id="qrImage" class="w-56 h-56 sm:w-64 sm:h-64">
                 </div>
-                <div class="mt-6 bg-gray-900 rounded-2xl p-5">
+                <div class="mt-6 bg-gray-900 rounded-2xl p-4 sm:p-5">
                     <p class="text-xs text-gray-400 mb-2">CHAVE PIX</p>
-                    <div class="flex gap-3">
-                        <input id="pixKeyInput" readonly class="flex-1 bg-transparent text-emerald-400 font-mono text-sm break-all">
-                        <button onclick="copiarPix()" class="bg-emerald-500 text-black px-6 rounded-2xl font-bold text-sm">COPIAR</button>
+                    <div class="flex gap-3 flex-col sm:flex-row">
+                        <input id="pixKeyInput" readonly class="flex-1 bg-transparent text-emerald-400 font-mono text-sm break-all text-center sm:text-left">
+                        <button onclick="copiarPix()" class="bg-emerald-500 text-black px-6 py-3 rounded-2xl font-bold text-sm">COPIAR</button>
                     </div>
                 </div>
                 <p id="timerPix" class="text-xs text-gray-500 mt-4 flex items-center justify-center gap-2">
@@ -174,74 +217,74 @@
 
     <!-- SALA DO BOLÃO -->
     <div id="salaBolao" class="sala hidden">
-        <div class="flex justify-between items-center mb-8">
-            <div class="flex items-center gap-4">
-                <div class="w-11 h-11 bg-emerald-500/20 text-emerald-400 rounded-2xl flex items-center justify-center text-3xl">🎟️</div>
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 sm:mb-8 gap-4">
+            <div class="flex items-center gap-3 sm:gap-4">
+                <div class="w-10 h-10 sm:w-11 sm:h-11 bg-emerald-500/20 text-emerald-400 rounded-2xl flex items-center justify-center text-2xl sm:text-3xl">🎟️</div>
                 <div>
-                    <h2 class="text-4xl font-bold tracking-tighter">Sala do Bolão</h2>
+                    <h2 class="text-3xl sm:text-4xl font-bold tracking-tighter">Sala do Bolão</h2>
                     <p class="text-emerald-400 flex items-center gap-2 text-sm">
                         <span class="inline-block w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
                         AO VIVO • <span id="totalParticipantes">0</span> participantes
                     </p>
                 </div>
             </div>
-            
-            <div class="flex items-center gap-4">
-                <button onclick="mostrarMeuCodigo()" 
-                        class="flex items-center gap-2 text-xs bg-gray-800 hover:bg-gray-700 px-5 py-3 rounded-3xl">
+           
+            <div class="flex items-center gap-3 sm:gap-4 w-full sm:w-auto">
+                <button onclick="mostrarMeuCodigo()"
+                        class="flex-1 sm:flex-none items-center gap-2 text-xs bg-gray-800 hover:bg-gray-700 px-4 sm:px-5 py-2.5 sm:py-3 rounded-3xl">
                     <i class="fas fa-key"></i>
                     MEU CÓDIGO
                 </button>
-                <button onclick="logout()" class="flex items-center gap-2 text-red-400 hover:text-red-300 transition text-sm font-medium">
+                <button onclick="logout()" class="flex-1 sm:flex-none items-center gap-2 text-red-400 hover:text-red-300 transition text-sm font-medium">
                     SAIR
                 </button>
             </div>
         </div>
 
         <!-- SEUS DADOS -->
-        <div class="card mb-8">
-            <h3 class="text-lg font-semibold mb-4 flex items-center gap-2"><i class="fas fa-user-circle"></i> SEUS DADOS</h3>
-            <div class="grid grid-cols-2 gap-6 text-sm">
+        <div class="card mb-6 sm:mb-8">
+            <h3 class="text-base sm:text-lg font-semibold mb-3 sm:mb-4 flex items-center gap-2"><i class="fas fa-user-circle"></i> SEUS DADOS</h3>
+            <div class="grid grid-cols-2 gap-4 sm:gap-6 text-sm">
                 <div>
                     <p class="text-gray-400 text-xs">NOME</p>
-                    <p id="meuNome" class="font-medium text-lg break-words"></p>
+                    <p id="meuNome" class="font-medium text-base sm:text-lg break-words"></p>
                 </div>
                 <div>
                     <p class="text-gray-400 text-xs">WHATSAPP</p>
-                    <p id="meuTelefone" class="font-medium text-lg"></p>
+                    <p id="meuTelefone" class="font-medium text-base sm:text-lg"></p>
                 </div>
             </div>
-            <div class="mt-4 pt-4 border-t border-gray-700 text-xs font-mono text-emerald-400" id="meuUserIdDisplay">
+            <div class="mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-gray-700 text-xs font-mono text-emerald-400" id="meuUserIdDisplay">
                 BOL-XXXXXX
             </div>
         </div>
 
         <!-- PARTICIPANTES AO VIVO -->
-        <div class="card mb-8">
-            <div class="flex justify-between mb-6">
-                <h3 class="text-lg font-semibold flex items-center gap-2"><i class="fas fa-users"></i> PARTICIPANTES AO VIVO</h3>
+        <div class="card mb-6 sm:mb-8">
+            <div class="flex justify-between mb-4 sm:mb-6">
+                <h3 class="text-base sm:text-lg font-semibold flex items-center gap-2"><i class="fas fa-users"></i> PARTICIPANTES AO VIVO</h3>
                 <button onclick="carregarParticipantes()" class="text-emerald-400 text-xs hover:text-white">ATUALIZAR</button>
             </div>
-            <ul id="listaParticipantes" class="space-y-3 max-h-80 overflow-auto">
-                <!-- JS -->
+            <ul id="listaParticipantes" class="space-y-3 max-h-72 sm:max-h-80 overflow-auto">
+                <!-- preenchido via JS -->
             </ul>
         </div>
 
         <!-- PULE -->
         <div class="card">
-            <h3 class="text-xl font-bold mb-6 flex items-center gap-3"><i class="fas fa-ticket"></i> SUA PULE OFICIAL</h3>
+            <h3 class="text-lg sm:text-xl font-bold mb-4 sm:mb-6 flex items-center gap-3"><i class="fas fa-ticket"></i> SUA PULE OFICIAL</h3>
             <button onclick="gerarPule()" id="btnGerarPule"
-                    class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 py-5 rounded-3xl font-bold text-xl flex items-center justify-center gap-3">
+                    class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 py-4 sm:py-5 rounded-3xl font-bold text-lg sm:text-xl flex items-center justify-center gap-3">
                 <i class="fas fa-dice"></i>
                 GERAR MINHA PULE
             </button>
-            <div id="puleContainer" class="mt-8"></div>
+            <div id="puleContainer" class="mt-6 sm:mt-8"></div>
         </div>
     </div>
 
     <script>
         const API_URL = 'https://script.google.com/macros/s/AKfycbyoEzMAJPNQ6fF38lvWAjDdKeLuMHIq88sIJUfRZNPL2jLgi7dQjJbznn2eh4ArInr2/exec';
-        
+       
         let paymentId = null;
         let timerPix = null;
         let timerParticipantes = null;
@@ -258,7 +301,7 @@
             else input.value = `(${v.slice(0,2)}) ${v.slice(2,7)}-${v.slice(7)}`;
         }
 
-        // ===================== GERAÇÃO DE CÓDIGO DE ACESSO =====================
+        // ===================== GERAÇÃO DE CÓDIGO =====================
         function gerarUserId() {
             const letras = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
             const nums = '23456789';
@@ -281,7 +324,7 @@
             }
         }
 
-        // ===================== IR PARA PIX =====================
+        // ===================== NAVEGAÇÃO =====================
         function irParaPix() {
             document.getElementById('homeArea').classList.add('hidden');
             document.getElementById('loginArea').classList.remove('hidden');
@@ -308,33 +351,24 @@
 
             btn.disabled = true;
             btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> GERANDO...`;
-
             nomeCliente = nome;
             telefoneCliente = telefone;
-            
-
+           
             try {
                 const res = await fetch(API_URL, {
                     method: 'POST',
                     body: JSON.stringify({ action: 'createPayment', nome, telefone })
                 });
                 const data = await res.json();
-
                 if (!data.success) throw new Error(data.message);
-
                 paymentId = data.paymentId;
-userId = data.userId;
-
-
+                userId = data.userId;
                 document.getElementById('qrArea').classList.remove('hidden');
                 document.getElementById('qrImage').src = `data:image/png;base64,${data.qrCodeBase64}`;
                 document.getElementById('pixKeyInput').value = data.pixKey;
-
                 status.innerHTML = `<span class="text-emerald-400">PIX gerado! Pague e aguarde confirmação automática</span>`;
                 setTimeout(copiarPix, 800);
-
                 timerPix = setInterval(verificarPagamento, 5000);
-
             } catch (e) {
                 status.innerHTML = `<span class="text-red-400">Erro: ${e.message}</span>`;
                 btn.disabled = false;
@@ -351,49 +385,8 @@ userId = data.userId;
                     body: JSON.stringify({ action: 'checkPayment', paymentId })
                 });
                 const data = await res.json();
-
                 if (data.status === 'PAID') {
                     clearInterval(timerPix);
-                    
-                    const auth = {
-                        nome: nomeCliente,
-                        telefone: telefoneCliente,
-                        userId: userId,
-                        expires: Date.now() + (365 * 24 * 60 * 60 * 1000) // 1 ano de acesso
-                    };
-                    localStorage.setItem('bolao_auth', JSON.stringify(auth));
-                    
-                    entrarNaSala();
-                }
-            } catch (_) {}
-        }
-
-        // ===================== VALIDAR CÓDIGO DE ACESSO (LOGIN RETORNANDO) =====================
-        async function validarCodigoAcesso() {
-            let code = document.getElementById('codigoAcesso').value.trim().toUpperCase();
-            const statusHome = document.createElement('p');
-            statusHome.className = 'text-sm mt-3 text-center';
-            
-            if (!code.startsWith('BOL-') || code.length !== 10) {
-                statusHome.innerHTML = `<span class="text-red-400">Código inválido. Exemplo: BOL-ABC123</span>`;
-                document.getElementById('homeArea').appendChild(statusHome);
-                setTimeout(() => statusHome.remove(), 4000);
-                return;
-            }
-
-            // CHAMADA NOVA AO BACKEND
-            try {
-                const res = await fetch(API_URL, {
-                    method: 'POST',
-                    body: JSON.stringify({ action: 'validateAccess', code })
-                });
-                const data = await res.json();
-
-                if (data.success) {
-                    nomeCliente = data.nome;
-                    telefoneCliente = data.telefone;
-                    userId = code;
-
                     const auth = {
                         nome: nomeCliente,
                         telefone: telefoneCliente,
@@ -401,18 +394,42 @@ userId = data.userId;
                         expires: Date.now() + (365 * 24 * 60 * 60 * 1000)
                     };
                     localStorage.setItem('bolao_auth', JSON.stringify(auth));
-                    
+                    entrarNaSala();
+                }
+            } catch (_) {}
+        }
+
+        // ===================== VALIDAR CÓDIGO =====================
+        async function validarCodigoAcesso() {
+            let code = document.getElementById('codigoAcesso').value.trim().toUpperCase();
+            if (!code.startsWith('BOL-') || code.length !== 10) {
+                alert('Código inválido. Exemplo: BOL-ABC123');
+                return;
+            }
+            try {
+                const res = await fetch(API_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ action: 'validateAccess', code })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    nomeCliente = data.nome;
+                    telefoneCliente = data.telefone;
+                    userId = code;
+                    const auth = {
+                        nome: nomeCliente,
+                        telefone: telefoneCliente,
+                        userId: userId,
+                        expires: Date.now() + (365 * 24 * 60 * 60 * 1000)
+                    };
+                    localStorage.setItem('bolao_auth', JSON.stringify(auth));
                     document.getElementById('homeArea').classList.add('hidden');
                     entrarNaSala();
                 } else {
-                    throw new Error(data.message || 'Código não encontrado ou pagamento não confirmado');
+                    alert(data.message || 'Código não encontrado ou pagamento não confirmado');
                 }
             } catch (e) {
-                const errMsg = document.createElement('p');
-                errMsg.className = 'text-red-400 text-sm mt-4 text-center';
-                errMsg.textContent = e.message;
-                document.getElementById('homeArea').appendChild(errMsg);
-                setTimeout(() => errMsg.remove(), 5000);
+                alert('Erro ao validar código');
             }
         }
 
@@ -421,19 +438,17 @@ userId = data.userId;
             document.getElementById('homeArea').classList.add('hidden');
             document.getElementById('loginArea').classList.add('hidden');
             document.getElementById('salaBolao').classList.remove('hidden');
-
             document.getElementById('meuNome').textContent = nomeCliente;
             document.getElementById('meuTelefone').textContent = telefoneCliente;
             document.getElementById('meuUserIdDisplay').textContent = userId;
-
             carregarParticipantes();
             if (timerParticipantes) clearInterval(timerParticipantes);
             timerParticipantes = setInterval(carregarParticipantes, 8000);
         }
 
-        // ===================== MOSTRAR MEU CÓDIGO =====================
+        // ===================== MOSTRAR CÓDIGO =====================
         function mostrarMeuCodigo() {
-            alert(`🔑 SEU CÓDIGO DE ACESSO:\n\n${userId}\n\nGuarde esse código!\nCom ele você entra na sala de qualquer celular ou computador.`);
+            alert(`🔑 SEU CÓDIGO DE ACESSO:\n\n${userId}\n\nGuarde esse código!\nCom ele você entra na sala de qualquer dispositivo.`);
             navigator.clipboard.writeText(userId);
         }
 
@@ -444,22 +459,20 @@ userId = data.userId;
                 const data = await res.json();
                 const lista = document.getElementById('listaParticipantes');
                 lista.innerHTML = '';
-
                 data.participantes.forEach(p => {
                     const li = document.createElement('li');
-                    li.className = 'flex items-center gap-4 bg-gray-800 p-5 rounded-3xl';
+                    li.className = 'flex items-center gap-3 sm:gap-4 bg-gray-800 p-4 sm:p-5 rounded-3xl';
                     li.innerHTML = `
-                        <div class="w-10 h-10 bg-emerald-500/20 rounded-2xl flex items-center justify-center font-bold text-emerald-400">
+                        <div class="w-9 h-9 sm:w-10 sm:h-10 bg-emerald-500/20 rounded-2xl flex items-center justify-center font-bold text-emerald-400 text-sm sm:text-base">
                             ${p.nome.substring(0,2).toUpperCase()}
                         </div>
                         <div class="flex-1">
-                            <p class="font-medium">${p.nome}</p>
+                            <p class="font-medium text-sm sm:text-base">${p.nome}</p>
                         </div>
-                        ${p.userId ? `<span class="font-mono text-xs bg-gray-900 px-4 py-2 rounded-2xl text-emerald-400">${p.userId}</span>` : ''}
+                        ${p.userId ? `<span class="font-mono text-xs bg-gray-900 px-3 sm:px-4 py-1.5 sm:py-2 rounded-2xl text-emerald-400">${p.userId}</span>` : ''}
                     `;
                     lista.appendChild(li);
                 });
-
                 document.getElementById('totalParticipantes').textContent = data.participantes.length;
             } catch (_) {}
         }
@@ -467,34 +480,33 @@ userId = data.userId;
         // ===================== GERAR PULE =====================
         async function gerarPule() {
             const container = document.getElementById('puleContainer');
-            container.innerHTML = `<div class="flex justify-center py-12"><i class="fas fa-spinner fa-spin text-5xl text-emerald-400"></i></div>`;
-            
+            container.innerHTML = `<div class="flex justify-center py-10"><i class="fas fa-spinner fa-spin text-5xl text-emerald-400"></i></div>`;
+           
             try {
                 const res = await fetch(`${API_URL}?action=getPule`);
                 const data = await res.json();
                 if (!data.success) throw new Error();
-
                 const { numeros } = data;
                 container.innerHTML = `
                     <div class="pule-card">
-                        <div class="flex justify-between">
+                        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 sm:mb-6 gap-4">
                             <div>
                                 <p class="text-xs opacity-75">CÓDIGO OFICIAL</p>
-                                <p class="text-3xl font-bold tracking-tighter">${userId}</p>
+                                <p class="text-2xl sm:text-3xl font-bold tracking-tighter">${userId}</p>
                             </div>
-                            <button onclick="compartilharPule(${JSON.stringify(numeros)})" 
-                                    class="bg-white/20 hover:bg-white/30 px-7 py-3 rounded-3xl text-sm font-bold">COMPARTILHAR</button>
+                            <button onclick="compartilharPule(${JSON.stringify(numeros)})"
+                                    class="w-full sm:w-auto bg-white/20 hover:bg-white/30 px-6 py-3 rounded-3xl text-sm font-bold">COMPARTILHAR</button>
                         </div>
-                        <div class="my-10 flex flex-wrap gap-6 justify-center">
+                        <div class="numeros-grid">
                             ${numeros.map(n => `
-                                <div class="w-16 h-16 bg-white text-black font-bold text-4xl rounded-3xl flex items-center justify-center shadow-inner">${n}</div>
+                                <div class="numero-bola">${n}</div>
                             `).join('')}
                         </div>
-                        <p class="text-center text-xs opacity-75">${nomeCliente}</p>
+                        <p class="text-center text-xs sm:text-sm opacity-75 mt-4">${nomeCliente}</p>
                     </div>
                 `;
             } catch {
-                container.innerHTML = `<p class="text-red-400 text-center">Erro ao gerar pule</p>`;
+                container.innerHTML = `<p class="text-red-400 text-center py-6">Erro ao gerar pule</p>`;
             }
         }
 
@@ -513,7 +525,7 @@ userId = data.userId;
         }
 
         function logout() {
-            if (confirm('Sair da sala?')) {
+            if (confirm('Sair da sala? Seu acesso continua salvo para entrar depois.')) {
                 localStorage.removeItem('bolao_auth');
                 clearInterval(timerParticipantes);
                 location.reload();
@@ -523,8 +535,7 @@ userId = data.userId;
         // ===================== INICIALIZAÇÃO =====================
         document.addEventListener('DOMContentLoaded', () => {
             const tel = document.getElementById('telefone');
-            tel.addEventListener('input', () => formatarTelefone(tel));
-
+            if (tel) tel.addEventListener('input', () => formatarTelefone(tel));
             carregarAuth();
         });
 
